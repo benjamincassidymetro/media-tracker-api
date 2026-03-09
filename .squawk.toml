@@ -1,0 +1,25 @@
+# Squawk rule exclusions for this project.
+# NOTE: squawk-cli 2.x does not support config file exclusions.
+# The excluded rules below are passed via --exclude in the npm lint:sql script.
+# This file serves as documentation for WHY each rule is excluded.
+#
+# require-concurrent-index-creation:
+#   CONCURRENTLY cannot be used inside a transaction block.
+#   Supabase migrations run inside auto-managed transactions.
+#
+# constraint-missing-not-valid:
+#   NOT VALID + VALIDATE CONSTRAINT is only needed when adding constraints to
+#   tables that already have data. These migrations create fresh tables.
+#
+# require-timeout-settings:
+#   lock_timeout / statement_timeout guards are important when altering live
+#   tables with traffic. Initial schema creation runs on an empty database.
+#
+# prefer-bigint-over-int:
+#   Domain values (ratings 1–5, years, page counts) will never approach int4
+#   max (~2 billion). Excluded as a pragmatic choice for this project.
+#
+# prefer-robust-stmts:
+#   Supabase's migration runner auto-wraps each file in a transaction
+#   (satisfying the "missing transaction" variant). IF NOT EXISTS is added
+#   manually to all CREATE TABLE and CREATE INDEX statements.

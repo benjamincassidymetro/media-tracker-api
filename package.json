@@ -1,0 +1,17 @@
+{
+  "name": "media-tracker-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "lint:sql": "squawk --exclude=require-concurrent-index-creation,constraint-missing-not-valid,require-timeout-settings,prefer-bigint-over-int,prefer-robust-stmts supabase/migrations/*.sql",
+    "db:reset": "npx supabase db reset",
+    "db:push": "npx supabase db push",
+    "migrate": "npx supabase migration new",
+    "start": "npx supabase start",
+    "stop": "npx supabase stop"
+  },
+  "devDependencies": {
+    "squawk-cli": "^2.43.0",
+    "supabase": "^2"
+  }
+}

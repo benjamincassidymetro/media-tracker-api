@@ -1,0 +1,11 @@
+# Environment variables — never commit real keys
+.env
+
+# Node dependencies
+node_modules/
+
+# Supabase local dev data (Docker volumes managed by CLI)
+supabase/.branches
+supabase/.temp
+
+.DS_Store
