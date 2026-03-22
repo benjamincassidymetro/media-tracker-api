@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Tracker - Neobrutalist Wireframes</title>
+    
+    <!-- Space Grotesk Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            /* Colors */
+            --primary: #6366F1;
+            --primary-dark: #4F46E5;
+            --secondary: #EC4899;
+            --accent: #F59E0B;
+            --black: #0F172A;
+            --gray-900: #1E293B;
+            --gray-700: #475569;
+            --gray-300: #CBD5E1;
+            --gray-200: #E2E8F0;
+            --gray-100: #F1F5F9;
+            --white: #FFFFFF;
+            --want-to: #8B5CF6;
+            --reading: #3B82F6;
+            --finished: #10B981;
+            
+            /* Typography */
+            --font: 'Space Grotesk', sans-serif;
+            
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            
+            /* Effects */
+            --border: 3px;
+            --radius: 8px;
+            --shadow: 6px 6px 0 var(--black);
+            --shadow-sm: 4px 4px 0 var(--black);
+        }
+        
+        body {
+            font-family: var(--font);
+            background: var(--gray-100);
+            color: var(--black);
+            padding: 48px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Typography */
+        .text-display { font-size: 56px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+        .text-h1 { font-size: 40px; font-weight: 700; line-height: 1.1; }
+        .text-h2 { font-size: 28px; font-weight: 700; line-height: 1.2; }
+        .text-h3 { font-size: 20px; font-weight: 700; line-height: 1.3; }
+        .text-body { font-size: 16px; font-weight: 500; line-height: 1.5; }
+        .text-body-sm { font-size: 14px; font-weight: 500; line-height: 1.4; }
+        .text-caption { font-size: 12px; font-weight: 700; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: var(--border) solid var(--black);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 64px;
+            text-align: center;
+            color: var(--white);
+            margin-bottom: 48px;
+        }
+        
+        /* Sections */
+        .section {
+            background: var(--white);
+            border: var(--border) solid var(--black);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 48px;
+            margin-bottom: 48px;
+        }
+        
+        .section-header {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: var(--border) solid var(--black);
+        }
+        
+        /* Style Guide Elements */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+        
+        .color-swatch {
+            border: var(--border) solid var(--black);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .color-preview { height: 100px; }
+        .color-info { padding: 16px; background: var(--white); }
+        
+        /* Components */
+        .btn {
+            display: inline-block;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: var(--font);
+            text-decoration: none;
+            border: var(--border) solid var(--black);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--black); }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-secondary { background: var(--white); color: var(--black); }
+        
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border: 2px solid var(--black);
+            border-radius: 999px;
+            box-shadow: 2px 2px 0 var(--black);
+        }
+        
+        /* Mobile Device Frame */
+        .device {
+            width: 395px;
+            height: 832px;
+            background: var(--black);
+            border-radius: 42px;
+            padding: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        .screen {
+            width: 375px;
+            height: 812px;
+            background: var(--white);
+            border-radius: 32px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .screen-label {
+            position: absolute;
+            top: -32px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--gray-700);
+        }
+        
+        .screens-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(395px, 1fr));
+            gap: 64px 48px;
+            margin-top: 48px;
+        }
+        
+        /* Screen Components */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: var(--border) solid var(--black);
+            background: var(--white);
+            height: 64px;
+        }
+        
+        .content {
+            padding: 16px;
+            background: var(--gray-100);
+            height: calc(812px - 64px - 72px);
+            overflow-y: auto;
+        }
+        
+        .bottomnav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 12px 0;
+            border-top: var(--border) solid var(--black);
+            background: var(--white);
+            height: 72px;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--gray-700);
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .nav-item.active { color: var(--primary); }
+        .nav-item i { width: 24px; height: 24px; }
+        
+        /* Segmented Control (for tabs) */
+        .segmented {
+            display: inline-flex;
+            background: var(--gray-200);
+            border: var(--border) solid var(--black);
+            border-radius: 999px;
+            padding: 4px;
+            gap: 4px;
+            margin-bottom: 24px;
+        }
+        
+        .segment {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .segment.active {
+            background: var(--white);
+            border-color: var(--black);
+            box-shadow: 2px 2px 0 var(--black);
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--white);
+            border: var(--border) solid var(--black);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .card-cover {
+            width: 60px;
+            height: 80px;
+            background: var(--gray-200);
+            border: 2px solid var(--black);
+            border-radius: 4px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card-cover i { width: 28px; height: 28px; }
+        
+        /* Input */
+        .input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            font-family: var(--font);
+            font-weight: 500;
+            border: var(--border) solid var(--black);
+            border-radius: var(--radius);
+            background: var(--white);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .input:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px var(--primary);
+        }
+        
+        /* Chips */
+        .chips {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .chip {
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            border: 2px solid var(--black);
+            border-radius: 999px;
+            background: var(--white);
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        
+        .chip.active {
+            background: var(--primary);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 2px 4px 0 var(--black);
+        }
+        
+        /* Progress */
+        .progress {
+            width: 100%;
+            height: 28px;
+            background: var(--gray-200);
+            border: var(--border) solid var(--black);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 13px;
+            font-weight: 700;
+        }
+        
+        /* Icon Button */
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--white);
+            border: 2px solid var(--black);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .icon-btn i { width: 20px; height: 20px; }
+        
+        /* Utility */
+        .mb-1 { margin-bottom: 8px; }
+        .mb-2 { margin-bottom: 16px; }
+        .mb-3 { margin-bottom: 24px; }
+        .mt-1 { margin-top: 8px; }
+        .mt-2 { margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero -->
+        <div class="hero">
+            <div class="text-display" style="margin-bottom: 16px;">📚 Media Tracker</div>
+            <div class="text-h2" style="opacity: 0.95;">Wireframes & Design System</div>
+            <div class="text-body" style="margin-top: 12px; opacity: 0.9;">Neobrutalist Design • Student App</div>
+        </div>
+
+        <!-- STYLE GUIDE -->
+        <div class="section">
+            <div class="section-header">
+                <div class="text-h1">Design System</div>
+                <div class="text-body" style="margin-top: 8px; color: var(--gray-700);">Complete neobrutalist style guide</div>
+            </div>
+
+            <!-- Typography -->
+            <div class="text-h2 mb-3">Typography</div>
+            <div style="margin-bottom: 48px;">
+                <div style="margin-bottom: 24px;">
+                    <div class="text-display">Display</div>
+                    <div class="text-caption" style="color: var(--gray-700); margin-top: 4px;">56px • 700 weight • Space Grotesk</div>
+                </div>
+                <div style="margin-bottom: 24px;">
+                    <div class="text-h1">Heading 1</div>
+                    <div class="text-caption" style="color: var(--gray-700); margin-top: 4px;">40px • 700 weight</div>
+                </div>
+                <div style="margin-bottom: 24px;">
+                    <div class="text-h2">Heading 2</div>
+                    <div class="text-caption" style="color: var(--gray-700); margin-top: 4px;">28px • 700 weight</div>
+                </div>
+                <div style="margin-bottom: 24px;">
+                    <div class="text-body">Body Text</div>
+                    <div class="text-caption" style="color: var(--gray-700); margin-top: 4px;">16px • 500 weight</div>
+                </div>
+                <div style="margin-bottom: 24px;">
+                    <div class="text-caption">CAPTION TEXT</div>
+                    <div class="text-caption" style="color: var(--gray-700); margin-top: 4px;">12px • 700 weight • Uppercase</div>
+                </div>
+            </div>
+
+            <!-- Colors -->
+            <div class="text-h2 mb-3">Color Palette</div>
+            <div class="color-grid">
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #6366F1;"></div>
+                    <div class="color-info">
+                        <div class="text-body-sm" style="font-weight: 700;">Primary</div>
+                        <div class="text-caption" style="color: var(--gray-700);">#6366F1</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #EC4899;"></div>
+                    <div class="color-info">
+                        <div class="text-body-sm" style="font-weight: 700;">Secondary</div>
+                        <div class="text-caption" style="color: var(--gray-700);">#EC4899</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #F59E0B;"></div>
+                    <div class="color-info">
+                        <div class="text-body-sm" style="font-weight: 700;">Accent</div>
+                        <div class="text-caption" style="color: var(--gray-700);">#F59E0B</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #8B5CF6;"></div>
+                    <div class="color-info">
+                        <div class="text-body-sm" style="font-weight: 700;">Want To</div>
+                        <div class="text-caption" style="color: var(--gray-700);">#8B5CF6</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #3B82F6;"></div>
+                    <div class="color-info">
+                        <div class="text-body-sm" style="font-weight: 700;">Reading</div>
+                        <div class="text-caption" style="color: var(--gray-700);">#3B82F6</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #10B981;"></div>
+                    <div class="color-info">
+                        <div class="text-body-sm" style="font-weight: 700;">Finished</div>
+                        <div class="text-caption" style="color: var(--gray-700);">#10B981</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Components -->
+            <div class="text-h2 mb-3" style="margin-top: 48px;">Components</div>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 32px;">
+                <button class="btn btn-primary">Primary Button</button>
+                <button class="btn btn-secondary">Secondary Button</button>
+                <span class="badge" style="background: var(--want-to); color: white;">Want To</span>
+                <span class="badge" style="background: var(--reading); color: white;">Reading</span>
+                <span class="badge" style="background: var(--finished); color: white;">Finished</span>
+            </div>
+            
+            <div class="text-h3 mb-2">Segmented Control</div>
+            <div class="segmented">
+                <div class="segment active">Want To</div>
+                <div class="segment">Reading</div>
+                <div class="segment">Finished</div>
+            </div>
+        </div>
+
+        <!-- WIREFRAMES -->
+        <div class="section">
+            <div class="section-header">
+                <div class="text-h1">Screen Wireframes</div>
+                <div class="text-body" style="margin-top: 8px; color: var(--gray-700);">16 screens total • 12 core + 3 custom features + auth</div>
+            </div>
+
+            <div class="screens-grid">
+                <!-- Screen 1: Login -->
+                <div style="position: relative;">
+                    <div class="screen-label">01 • Login</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="content" style="display: flex; flex-direction: column; justify-content: center; padding: 32px; height: 812px;">
+                                <div style="text-align: center; margin-bottom: 56px;">
+                                    <i data-lucide="book-open" style="width: 80px; height: 80px; margin: 0 auto 20px; display: block; stroke: var(--primary); stroke-width: 2;"></i>
+                                    <div class="text-h2 mb-1">Media Tracker</div>
+                                    <div class="text-body" style="color: var(--gray-700);">Track what you love</div>
+                                </div>
+                                <div class="mb-2">
+                                    <input type="email" class="input mb-2" placeholder="Email">
+                                    <input type="password" class="input" placeholder="Password">
+                                </div>
+                                <button class="btn btn-primary mb-2" style="width: 100%;">Login</button>
+                                <div class="text-body-sm" style="text-align: center; color: var(--gray-700);">Don't have an account? <span style="color: var(--primary); font-weight: 700; cursor: pointer;">Sign Up</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 2: Create Account -->
+                <div style="position: relative;">
+                    <div class="screen-label">02 • Create Account</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="content" style="display: flex; flex-direction: column; justify-content: center; padding: 32px; height: 812px;">
+                                <div style="text-align: center; margin-bottom: 48px;">
+                                    <i data-lucide="book-open" style="width: 64px; height: 64px; margin: 0 auto 16px; display: block; stroke: var(--primary); stroke-width: 2;"></i>
+                                    <div class="text-h2 mb-1">Create Account</div>
+                                    <div class="text-body" style="color: var(--gray-700);">Join the reading community</div>
+                                </div>
+                                <div class="mb-2">
+                                    <input type="text" class="input mb-2" placeholder="Display Name">
+                                    <input type="text" class="input mb-2" placeholder="Username">
+                                    <input type="email" class="input mb-2" placeholder="Email">
+                                    <input type="password" class="input mb-2" placeholder="Password">
+                                    <input type="password" class="input" placeholder="Confirm Password">
+                                </div>
+                                <button class="btn btn-primary mb-2" style="width: 100%;">Sign Up</button>
+                                <div class="text-body-sm" style="text-align: center; color: var(--gray-700);">Already have an account? <span style="color: var(--primary); font-weight: 700; cursor: pointer;">Login</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 3: Search / Home -->
+                <div style="position: relative;">
+                    <div class="screen-label">03 • Search / Home</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="text-h3">Media Tracker</div>
+                                <div class="icon-btn">
+                                    <i data-lucide="user" style="width: 20px; height: 20px;"></i>
+                                </div>
+                            </div>
+                            <div class="content">
+                                <div class="mb-2">
+                                    <div style="position: relative;">
+                                        <input type="text" class="input" placeholder="Search books, movies..." style="padding-left: 48px;">
+                                        <i data-lucide="search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--gray-700);"></i>
+                                    </div>
+                                </div>
+                                <div class="chips mb-3">
+                                    <div class="chip active">Books</div>
+                                    <div class="chip">Movies</div>
+                                    <div class="chip">All</div>
+                                </div>
+                                <div class="text-caption mb-2" style="color: var(--gray-700);">POPULAR THIS WEEK</div>
+                                <div class="card">
+                                    <div class="card-cover">
+                                        <i data-lucide="book" style="width: 28px; height: 28px;"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="text-body-sm" style="font-weight: 700;">The Hobbit</div>
+                                        <div class="text-body-sm" style="color: var(--gray-700);">J.R.R. Tolkien</div>
+                                        <div class="text-body-sm mt-1" style="display: flex; align-items: center; gap: 8px; color: var(--gray-700);">
+                                            <span style="color: var(--accent);">★ 4.8</span>
+                                            <span>•</span>
+                                            <span>1937</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-cover">
+                                        <i data-lucide="book" style="width: 28px; height: 28px;"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="text-body-sm" style="font-weight: 700;">1984</div>
+                                        <div class="text-body-sm" style="color: var(--gray-700);">George Orwell</div>
+                                        <div class="text-body-sm mt-1" style="display: flex; align-items: center; gap: 8px; color: var(--gray-700);">
+                                            <span style="color: var(--accent);">★ 4.7</span>
+                                            <span>•</span>
+                                            <span>1949</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 3: My Library -->
+                <div style="position: relative;">
+                    <div class="screen-label">04 • My Library</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="text-h3">My Library</div>
+                                <div class="icon-btn">
+                                    <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
+                                </div>
+                            </div>
+                            <div class="content">
+                                <div class="segmented mb-3">
+                                    <div class="segment active">Want To</div>
+                                    <div class="segment">Reading</div>
+                                    <div class="segment">Finished</div>
+                                </div>
+                                <div class="text-body-sm mb-2" style="color: var(--gray-700);">12 books in your Want To list</div>
+                                <div class="card">
+                                    <div class="card-cover">
+                                        <i data-lucide="book" style="width: 28px; height: 28px;"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="text-body-sm" style="font-weight: 700;">The Hobbit</div>
+                                        <div class="text-body-sm" style="color: var(--gray-700);">J.R.R. Tolkien</div>
+                                        <div class="text-caption mt-1" style="color: var(--gray-700);">Added 2 days ago</div>
+                                    </div>
+                                    <div class="icon-btn">
+                                        <i data-lucide="more-vertical" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-cover">
+                                        <i data-lucide="book" style="width: 28px; height: 28px;"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="text-body-sm" style="font-weight: 700;">1984</div>
+                                        <div class="text-body-sm" style="color: var(--gray-700);">George Orwell</div>
+                                        <div class="text-caption mt-1" style="color: var(--gray-700);">Added 1 week ago</div>
+                                    </div>
+                                    <div class="icon-btn">
+                                        <i data-lucide="more-vertical" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 4: Reading Goals (Custom Feature #2) -->
+                <div style="position: relative;">
+                    <div class="screen-label">CUSTOM #2 • Reading Goals</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="icon-btn">
+                                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div class="text-h3">2025 Goals</div>
+                                <div class="icon-btn">
+                                    <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
+                                </div>
+                            </div>
+                            <div class="content">
+                                <div style="padding: 28px; background: var(--white); border: 3px solid var(--black); border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 24px;">
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                                        <i data-lucide="book-open" style="width: 32px; height: 32px; color: var(--primary);"></i>
+                                        <div class="text-h3">2025 Book Goal</div>
+                                    </div>
+                                    <div class="text-h2 mb-2">15 / 24 books</div>
+                                    <div class="progress mb-2">
+                                        <div class="progress-fill" style="width: 63%;"></div>
+                                        <div class="progress-text">63%</div>
+                                    </div>
+                                    <div class="text-body-sm" style="font-weight: 700;">9 books to go!</div>
+                                    <div class="text-body-sm" style="color: var(--gray-700);">🎯 You're on track</div>
+                                </div>
+                                <div class="text-caption mb-2" style="color: var(--gray-700);">ACHIEVEMENTS</div>
+                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                                    <div style="padding: 16px; background: var(--white); border: 2px solid var(--black); border-radius: 8px; text-align: center; box-shadow: var(--shadow-sm);">
+                                        <div style="font-size: 32px; margin-bottom: 4px;">🥉</div>
+                                        <div class="text-caption">25%</div>
+                                        <div class="text-caption" style="color: var(--finished);">✓</div>
+                                    </div>
+                                    <div style="padding: 16px; background: var(--white); border: 2px solid var(--black); border-radius: 8px; text-align: center; box-shadow: var(--shadow-sm);">
+                                        <div style="font-size: 32px; margin-bottom: 4px;">🥈</div>
+                                        <div class="text-caption">50%</div>
+                                        <div class="text-caption" style="color: var(--finished);">✓</div>
+                                    </div>
+                                    <div style="padding: 16px; background: var(--gray-200); border: 2px solid var(--black); border-radius: 8px; text-align: center; opacity: 0.5;">
+                                        <div style="font-size: 32px; margin-bottom: 4px;">🥇</div>
+                                        <div class="text-caption">75%</div>
+                                        <div class="text-caption" style="color: var(--gray-700);">—</div>
+                                    </div>
+                                    <div style="padding: 16px; background: var(--gray-200); border: 2px solid var(--black); border-radius: 8px; text-align: center; opacity: 0.5;">
+                                        <div style="font-size: 32px; margin-bottom: 4px;">🏆</div>
+                                        <div class="text-caption">100%</div>
+                                        <div class="text-caption" style="color: var(--gray-700);">—</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Screen 5: Media Detail -->
+                <div style="position: relative;">
+                    <div class="screen-label">05 • Media Detail</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="icon-btn">
+                                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div class="icon-btn">
+                                    <i data-lucide="more-vertical" style="width: 20px; height: 20px;"></i>
+                                </div>
+                            </div>
+                            <div class="content">
+                                <div style="text-align: center; margin-bottom: 24px;">
+                                    <div style="width: 140px; height: 200px; background: var(--gray-200); border: 3px solid var(--black); border-radius: 8px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                                        <i data-lucide="book" style="width: 64px; height: 64px;"></i>
+                                    </div>
+                                    <div class="text-h3 mb-1">The Hobbit</div>
+                                    <div class="text-body-sm" style="color: var(--gray-700); margin-bottom: 8px;">by J.R.R. Tolkien</div>
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--gray-700);">
+                                        <span style="color: var(--accent);">★★★★★ 4.8</span>
+                                        <span>(1,234 ratings)</span>
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+                                    <button class="btn btn-primary" style="padding: 12px;">+ Want To</button>
+                                    <button class="btn btn-secondary" style="padding: 12px;">❤️ 234</button>
+                                </div>
+                                <div class="text-caption mb-1" style="color: var(--gray-700);">ABOUT</div>
+                                <div class="text-body-sm mb-3">In a hole in the ground there lived a hobbit. An unexpected journey begins when Gandalf arrives...</div>
+                                <div class="text-caption mb-2" style="color: var(--gray-700);">DETAILS</div>
+                                <div class="stat-grid mb-3">
+                                    <div class="stat-box">
+                                        <div class="text-caption" style="color: var(--gray-700);">YEAR</div>
+                                        <div class="text-body-sm" style="font-weight: 700;">1937</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="text-caption" style="color: var(--gray-700);">PAGES</div>
+                                        <div class="text-body-sm" style="font-weight: 700;">310</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="text-caption" style="color: var(--gray-700);">GENRE</div>
+                                        <div class="text-body-sm" style="font-weight: 700;">Fantasy</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 6: Write Review -->
+                <div style="position: relative;">
+                    <div class="screen-label">06 • Write Review</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="icon-btn">
+                                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div class="text-h3">Write Review</div>
+                                <button class="btn btn-primary btn-sm" style="padding: 8px 16px; font-size: 14px; box-shadow: 2px 2px 0 var(--black);">Post</button>
+                            </div>
+                            <div class="content">
+                                <div style="text-align: center; margin-bottom: 28px;">
+                                    <div style="width: 80px; height: 120px; background: var(--gray-200); border: 2px solid var(--black); border-radius: 4px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;">
+                                        <i data-lucide="book" style="width: 40px; height: 40px;"></i>
+                                    </div>
+                                    <div class="text-body-sm" style="font-weight: 700;">The Hobbit</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="text-body-sm mb-2" style="font-weight: 700;">Rate this book</div>
+                                    <div style="display: flex; gap: 8px; justify-content: center; font-size: 40px; color: var(--accent);">
+                                        <span>☆</span><span>☆</span><span>☆</span><span>☆</span><span>☆</span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="text-body-sm mb-2" style="font-weight: 700;">Write your review</div>
+                                    <textarea class="input" rows="6" placeholder="What did you think?" style="resize: none; font-family: var(--font);"></textarea>
+                                    <div class="text-body-sm mt-1" style="color: var(--gray-700); text-align: right;">0 / 500</div>
+                                </div>
+                                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                                    <input type="checkbox" checked style="width: 20px; height: 20px; cursor: pointer;">
+                                    <span class="text-body-sm">Share to activity feed</span>
+                                </label>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 7: User Profile -->
+                <div style="position: relative;">
+                    <div class="screen-label">07 • User Profile</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="icon-btn">
+                                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div class="icon-btn">
+                                    <i data-lucide="more-vertical" style="width: 20px; height: 20px;"></i>
+                                </div>
+                            </div>
+                            <div class="content">
+                                <div style="text-align: center; margin-bottom: 24px;">
+                                    <div style="width: 80px; height: 80px; background: var(--primary); border: 3px solid var(--black); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 700;">A</div>
+                                    <div class="text-h3 mb-1">@alice_reads</div>
+                                    <div class="text-body-sm mb-2" style="color: var(--gray-700);">Alice Johnson</div>
+                                    <div class="text-caption" style="color: var(--gray-700);">📅 Reading since Jan 2023</div>
+                                </div>
+                                <div class="stat-grid mb-3">
+                                    <div class="stat-box">
+                                        <div class="text-h3">45</div>
+                                        <div class="text-caption" style="color: var(--gray-700);">Books</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="text-h3">123</div>
+                                        <div class="text-caption" style="color: var(--gray-700);">Following</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="text-h3">67</div>
+                                        <div class="text-caption" style="color: var(--gray-700);">Followers</div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary mb-3" style="width: 100%;">Follow</button>
+                                <div class="text-caption mb-1" style="color: var(--gray-700);">ABOUT</div>
+                                <div class="text-body-sm mb-3">Love fantasy and sci-fi! Always looking for new recommendations.</div>
+                                <div class="text-caption mb-2" style="color: var(--gray-700);">RECENT ACTIVITY</div>
+                                <div class="card">
+                                    <div class="card-cover">
+                                        <i data-lucide="book" style="width: 28px; height: 28px;"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="text-body-sm" style="font-weight: 700;">Finished reading</div>
+                                        <div class="text-body-sm" style="color: var(--gray-700);">The Hobbit</div>
+                                        <div class="text-caption mt-1" style="color: var(--gray-700);">2 days ago</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 8: Activity Feed -->
+                <div style="position: relative;">
+                    <div class="screen-label">08 • Activity Feed</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="text-h3">Activity</div>
+                                <div class="icon-btn">
+                                    <i data-lucide="settings" style="width: 20px; height: 20px;"></i>
+                                </div>
+                            </div>
+                            <div class="content">
+                                <div style="padding: 16px; background: var(--white); border: 3px solid var(--black); border-radius: 8px; box-shadow: var(--shadow-sm); margin-bottom: 16px;">
+                                    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                                        <div style="width: 40px; height: 40px; background: var(--primary); border: 2px solid var(--black); border-radius: 50%; flex-shrink: 0;"></div>
+                                        <div style="flex: 1;">
+                                            <div class="text-body-sm mb-1" style="font-weight: 700;">Alice finished reading</div>
+                                            <div class="card" style="padding: 12px; margin-bottom: 8px;">
+                                                <div class="card-cover" style="width: 40px; height: 60px;">
+                                                    <i data-lucide="book" style="width: 20px; height: 20px;"></i>
+                                                </div>
+                                                <div style="flex: 1;">
+                                                    <div class="text-body-sm" style="font-weight: 700;">The Hobbit</div>
+                                                    <div style="color: var(--accent); font-size: 14px;">★★★★★</div>
+                                                    <div class="text-body-sm mt-1">"Amazing book!"</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-caption" style="color: var(--gray-700);">2 hours ago</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="padding: 16px; background: var(--white); border: 3px solid var(--black); border-radius: 8px; box-shadow: var(--shadow-sm); margin-bottom: 16px;">
+                                    <div style="display: flex; gap: 12px;">
+                                        <div style="width: 40px; height: 40px; background: var(--secondary); border: 2px solid var(--black); border-radius: 50%; flex-shrink: 0;"></div>
+                                        <div style="flex: 1;">
+                                            <div class="text-body-sm mb-1" style="font-weight: 700;">Bob added to Want To</div>
+                                            <div class="card" style="padding: 12px; margin-bottom: 8px;">
+                                                <div class="card-cover" style="width: 40px; height: 60px;">
+                                                    <i data-lucide="film" style="width: 20px; height: 20px;"></i>
+                                                </div>
+                                                <div style="flex: 1;">
+                                                    <div class="text-body-sm" style="font-weight: 700;">Inception</div>
+                                                    <div class="text-body-sm" style="color: var(--gray-700);">Christopher Nolan</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-caption" style="color: var(--gray-700);">5 hours ago</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="activity"></i>
+                                    <span>Activity</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 9: My Profile -->
+                <div style="position: relative;">
+                    <div class="screen-label">09 • My Profile</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="text-h3">Profile</div>
+                                <div class="icon-btn">
+                                    <i data-lucide="settings" style="width: 20px; height: 20px;"></i>
+                                </div>
+                            </div>
+                            <div class="content">
+                                <div style="text-align: center; margin-bottom: 24px;">
+                                    <div style="width: 80px; height: 80px; background: var(--primary); border: 3px solid var(--black); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 700;">M</div>
+                                    <div class="text-h3 mb-1">@mike_reads</div>
+                                    <div class="text-body-sm mb-2" style="color: var(--gray-700);">Mike Chen</div>
+                                    <button class="btn btn-secondary" style="padding: 10px 24px; font-size: 14px;">Edit Profile</button>
+                                </div>
+                                <div class="stat-grid mb-3">
+                                    <div class="stat-box">
+                                        <div class="text-h3">23</div>
+                                        <div class="text-caption" style="color: var(--gray-700);">Books</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="text-h3">45</div>
+                                        <div class="text-caption" style="color: var(--gray-700);">Following</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="text-h3">89</div>
+                                        <div class="text-caption" style="color: var(--gray-700);">Followers</div>
+                                    </div>
+                                </div>
+                                <div class="text-caption mb-1" style="color: var(--gray-700);">ABOUT</div>
+                                <div class="text-body-sm mb-3">Avid reader of sci-fi and fantasy. Currently working through the Dune series!</div>
+                                <div class="text-caption mb-2" style="color: var(--gray-700);">QUICK STATS</div>
+                                <div style="padding: 20px; background: var(--white); border: 3px solid var(--black); border-radius: 8px; box-shadow: var(--shadow-sm);">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                                        <span class="text-body-sm">Books this year</span>
+                                        <span class="text-body-sm" style="font-weight: 700;">15</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                                        <span class="text-body-sm">Avg. rating</span>
+                                        <span class="text-body-sm" style="font-weight: 700;">4.2 ★</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <span class="text-body-sm">Total reviews</span>
+                                        <span class="text-body-sm" style="font-weight: 700;">18</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 10: Search Results -->
+                <div style="position: relative;">
+                    <div class="screen-label">10 • Search Results</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="icon-btn">
+                                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div style="flex: 1; margin: 0 12px;">
+                                    <input type="text" class="input" value="hobbit" placeholder="Search..." style="padding: 10px 14px; font-size: 14px; box-shadow: 2px 2px 0 var(--black);">
+                                </div>
+                            </div>
+                            <div class="content">
+                                <div class="chips mb-3">
+                                    <div class="chip active">All</div>
+                                    <div class="chip">Books</div>
+                                    <div class="chip">Movies</div>
+                                </div>
+                                <div class="text-caption mb-2" style="color: var(--gray-700);">12 RESULTS</div>
+                                <div class="card">
+                                    <div class="card-cover">
+                                        <i data-lucide="book" style="width: 28px; height: 28px;"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="text-body-sm" style="font-weight: 700;">The Hobbit</div>
+                                        <div class="text-body-sm" style="color: var(--gray-700);">J.R.R. Tolkien</div>
+                                        <div class="text-body-sm mt-1" style="display: flex; align-items: center; gap: 8px; color: var(--gray-700);">
+                                            <span style="color: var(--accent);">★ 4.8</span>
+                                            <span>•</span>
+                                            <span>1937</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-cover">
+                                        <i data-lucide="film" style="width: 28px; height: 28px;"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="text-body-sm" style="font-weight: 700;">The Hobbit: An Unexpected Journey</div>
+                                        <div class="text-body-sm" style="color: var(--gray-700);">Peter Jackson</div>
+                                        <div class="text-body-sm mt-1" style="display: flex; align-items: center; gap: 8px; color: var(--gray-700);">
+                                            <span style="color: var(--accent);">★ 4.5</span>
+                                            <span>•</span>
+                                            <span>2012</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 11: Followers/Following -->
+                <div style="position: relative;">
+                    <div class="screen-label">11 • Followers</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="icon-btn">
+                                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div class="text-h3">Followers</div>
+                                <div style="width: 40px;"></div>
+                            </div>
+                            <div class="content">
+                                <div class="segmented mb-3">
+                                    <div class="segment active">Followers</div>
+                                    <div class="segment">Following</div>
+                                </div>
+                                <div class="text-body-sm mb-2" style="color: var(--gray-700);">89 followers</div>
+                                <div style="padding: 16px; background: var(--white); border: 2px solid var(--black); border-radius: 8px; box-shadow: var(--shadow-sm); margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 48px; height: 48px; background: var(--primary); border: 2px solid var(--black); border-radius: 50%; flex-shrink: 0;"></div>
+                                    <div style="flex: 1;">
+                                        <div class="text-body-sm" style="font-weight: 700;">Alice Johnson</div>
+                                        <div class="text-body-sm" style="color: var(--gray-700);">@alice_reads</div>
+                                    </div>
+                                    <button class="btn btn-primary" style="padding: 8px 16px; font-size: 13px; box-shadow: 2px 2px 0 var(--black);">Follow</button>
+                                </div>
+                                <div style="padding: 16px; background: var(--white); border: 2px solid var(--black); border-radius: 8px; box-shadow: var(--shadow-sm); margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 48px; height: 48px; background: var(--secondary); border: 2px solid var(--black); border-radius: 50%; flex-shrink: 0;"></div>
+                                    <div style="flex: 1;">
+                                        <div class="text-body-sm" style="font-weight: 700;">Bob Smith</div>
+                                        <div class="text-body-sm" style="color: var(--gray-700);">@bob_books</div>
+                                    </div>
+                                    <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px; box-shadow: 2px 2px 0 var(--black);">Following</button>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 12: Settings -->
+                <div style="position: relative;">
+                    <div class="screen-label">12 • Settings</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="icon-btn">
+                                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div class="text-h3">Settings</div>
+                                <div style="width: 40px;"></div>
+                            </div>
+                            <div class="content">
+                                <div class="text-caption mb-2" style="color: var(--gray-700);">ACCOUNT</div>
+                                <div style="background: var(--white); border: 2px solid var(--black); border-radius: 8px; box-shadow: var(--shadow-sm); margin-bottom: 24px; overflow: hidden;">
+                                    <div style="padding: 16px; border-bottom: 2px solid var(--black); display: flex; justify-content: space-between; align-items: center;">
+                                        <span class="text-body-sm" style="font-weight: 600;">Edit Profile</span>
+                                        <i data-lucide="chevron-right" style="width: 20px; height: 20px; color: var(--gray-700);"></i>
+                                    </div>
+                                    <div style="padding: 16px; border-bottom: 2px solid var(--black); display: flex; justify-content: space-between; align-items: center;">
+                                        <span class="text-body-sm" style="font-weight: 600;">Change Password</span>
+                                        <i data-lucide="chevron-right" style="width: 20px; height: 20px; color: var(--gray-700);"></i>
+                                    </div>
+                                    <div style="padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                                        <span class="text-body-sm" style="font-weight: 600;">Privacy</span>
+                                        <i data-lucide="chevron-right" style="width: 20px; height: 20px; color: var(--gray-700);"></i>
+                                    </div>
+                                </div>
+                                <div class="text-caption mb-2" style="color: var(--gray-700);">PREFERENCES</div>
+                                <div style="background: var(--white); border: 2px solid var(--black); border-radius: 8px; box-shadow: var(--shadow-sm); margin-bottom: 24px; overflow: hidden;">
+                                    <div style="padding: 16px; border-bottom: 2px solid var(--black); display: flex; justify-content: space-between; align-items: center;">
+                                        <span class="text-body-sm" style="font-weight: 600;">Notifications</span>
+                                        <div style="width: 48px; height: 28px; background: var(--primary); border: 2px solid var(--black); border-radius: 999px; position: relative;">
+                                            <div style="width: 20px; height: 20px; background: white; border: 2px solid var(--black); border-radius: 50%; position: absolute; right: 2px; top: 2px;"></div>
+                                        </div>
+                                    </div>
+                                    <div style="padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                                        <span class="text-body-sm" style="font-weight: 600;">Dark Mode</span>
+                                        <div style="width: 48px; height: 28px; background: var(--gray-300); border: 2px solid var(--black); border-radius: 999px; position: relative;">
+                                            <div style="width: 20px; height: 20px; background: white; border: 2px solid var(--black); border-radius: 50%; position: absolute; left: 2px; top: 2px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-secondary" style="width: 100%; color: var(--error); border-color: var(--error);">Log Out</button>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CUSTOM FEATURE 1: Want-To Priorities -->
+                <div style="position: relative;">
+                    <div class="screen-label">CUSTOM #1 • Want-To Priorities</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="icon-btn">
+                                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div class="text-h3">Want To Priorities</div>
+                                <div class="icon-btn">
+                                    <i data-lucide="filter" style="width: 20px; height: 20px;"></i>
+                                </div>
+                            </div>
+                            <div class="content">
+                                <div class="chips mb-3">
+                                    <div class="chip active">🔴 High</div>
+                                    <div class="chip">🟡 Medium</div>
+                                    <div class="chip">🟢 Low</div>
+                                    <div class="chip">All</div>
+                                </div>
+                                <div class="text-body-sm mb-2" style="color: var(--gray-700);">Drag to reorder your priority list</div>
+                                <div style="padding: 16px; background: var(--white); border: 3px solid var(--black); border-radius: 8px; box-shadow: var(--shadow-sm); margin-bottom: 12px; display: flex; gap: 12px;">
+                                    <div style="width: 28px; height: 28px; background: var(--gray-200); border: 2px solid var(--black); border-radius: 4px; cursor: grab; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <i data-lucide="grip-vertical" style="width: 16px; height: 16px;"></i>
+                                    </div>
+                                    <div class="card-cover" style="width: 40px; height: 60px;">
+                                        <i data-lucide="book" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="text-body-sm mb-1" style="font-weight: 700;">The Hobbit</div>
+                                        <div class="badge" style="background: var(--want-to); color: white; font-size: 10px; padding: 4px 10px;">High Priority</div>
+                                        <div class="text-caption mt-1" style="color: var(--gray-700);">⏱️ Est. 6 hours</div>
+                                        <div class="text-body-sm mt-1">💭 "Friend recommended"</div>
+                                    </div>
+                                </div>
+                                <div style="padding: 16px; background: var(--white); border: 3px solid var(--black); border-radius: 8px; box-shadow: var(--shadow-sm); margin-bottom: 12px; display: flex; gap: 12px;">
+                                    <div style="width: 28px; height: 28px; background: var(--gray-200); border: 2px solid var(--black); border-radius: 4px; cursor: grab; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <i data-lucide="grip-vertical" style="width: 16px; height: 16px;"></i>
+                                    </div>
+                                    <div class="card-cover" style="width: 40px; height: 60px;">
+                                        <i data-lucide="book" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="text-body-sm mb-1" style="font-weight: 700;">1984</div>
+                                        <div class="badge" style="background: var(--secondary); color: white; font-size: 10px; padding: 4px 10px;">Medium Priority</div>
+                                        <div class="text-caption mt-1" style="color: var(--gray-700);">⏱️ Est. 5 hours</div>
+                                        <div class="text-body-sm mt-1">💭 "For book club"</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 14: Edit Profile -->
+                <div style="position: relative;">
+                    <div class="screen-label">13 • Edit Profile</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="icon-btn">
+                                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div class="text-h3">Edit Profile</div>
+                                <button class="btn btn-primary" style="padding: 8px 16px; font-size: 14px; box-shadow: 2px 2px 0 var(--black);">Save</button>
+                            </div>
+                            <div class="content">
+                                <div style="text-align: center; margin-bottom: 28px;">
+                                    <div style="width: 80px; height: 80px; background: var(--primary); border: 3px solid var(--black); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 700; position: relative;">
+                                        M
+                                        <div style="position: absolute; bottom: -4px; right: -4px; width: 32px; height: 32px; background: var(--white); border: 2px solid var(--black); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                            <i data-lucide="camera" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="text-body-sm" style="color: var(--primary); font-weight: 700; cursor: pointer;">Change Photo</div>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="text-body-sm mb-1" style="font-weight: 700;">Display Name</div>
+                                    <input type="text" class="input" value="Mike Chen">
+                                </div>
+                                <div class="mb-2">
+                                    <div class="text-body-sm mb-1" style="font-weight: 700;">Username</div>
+                                    <input type="text" class="input" value="@mike_reads">
+                                </div>
+                                <div class="mb-2">
+                                    <div class="text-body-sm mb-1" style="font-weight: 700;">Bio</div>
+                                    <textarea class="input" rows="4" style="resize: none; font-family: var(--font);">Avid reader of sci-fi and fantasy. Currently working through the Dune series!</textarea>
+                                    <div class="text-body-sm mt-1" style="color: var(--gray-700); text-align: right;">89 / 150</div>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CUSTOM FEATURE 3: Quotes Collection -->
+                <div style="position: relative;">
+                    <div class="screen-label">CUSTOM #3 • Quotes Collection</div>
+                    <div class="device">
+                        <div class="screen">
+                            <div class="topbar">
+                                <div class="icon-btn">
+                                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div class="text-h3">Quotes</div>
+                                <div class="icon-btn">
+                                    <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
+                                </div>
+                            </div>
+                            <div class="content">
+                                <div class="segmented mb-3">
+                                    <div class="segment active">My Quotes</div>
+                                    <div class="segment">Public</div>
+                                </div>
+                                <div class="text-body-sm mb-2" style="color: var(--gray-700);">42 saved quotes</div>
+                                <div style="padding: 20px; background: var(--white); border: 3px solid var(--black); border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 16px;">
+                                    <div class="text-body" style="font-style: italic; margin-bottom: 16px; line-height: 1.6;">"It is our choices, Harry, that show what we truly are, far more than our abilities."</div>
+                                    <div style="display: flex; gap: 12px; padding-top: 12px; border-top: 2px solid var(--black);">
+                                        <div style="width: 40px; height: 60px; background: var(--gray-200); border: 2px solid var(--black); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                                            <i data-lucide="book" style="width: 20px; height: 20px;"></i>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <div class="text-body-sm" style="font-weight: 700;">Harry Potter</div>
+                                            <div class="text-caption" style="color: var(--gray-700);">Page 333</div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; margin-top: 12px; padding: 8px; background: var(--gray-100); border-radius: 6px; align-items: center;">
+                                        <span class="text-body-sm">🔒 Private</span>
+                                        <div style="flex: 1;"></div>
+                                        <div class="icon-btn" style="width: 32px; height: 32px;">
+                                            <i data-lucide="heart" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <span class="text-body-sm">12</span>
+                                        <div class="icon-btn" style="width: 32px; height: 32px;">
+                                            <i data-lucide="share-2" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="padding: 20px; background: var(--white); border: 3px solid var(--black); border-radius: 8px; box-shadow: var(--shadow);">
+                                    <div class="text-body" style="font-style: italic; margin-bottom: 16px; line-height: 1.6;">"Not all those who wander are lost."</div>
+                                    <div style="display: flex; gap: 12px; padding-top: 12px; border-top: 2px solid var(--black);">
+                                        <div style="width: 40px; height: 60px; background: var(--gray-200); border: 2px solid var(--black); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                                            <i data-lucide="book" style="width: 20px; height: 20px;"></i>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <div class="text-body-sm" style="font-weight: 700;">Lord of the Rings</div>
+                                            <div class="text-caption" style="color: var(--gray-700);">Page 167</div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; margin-top: 12px; padding: 8px; background: var(--gray-100); border-radius: 6px; align-items: center;">
+                                        <span class="text-body-sm">🌐 Public</span>
+                                        <div style="flex: 1;"></div>
+                                        <div class="icon-btn" style="width: 32px; height: 32px;">
+                                            <i data-lucide="heart" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary);"></i>
+                                        </div>
+                                        <span class="text-body-sm">45</span>
+                                        <div class="icon-btn" style="width: 32px; height: 32px;">
+                                            <i data-lucide="share-2" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bottomnav">
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="search"></i>
+                                    <span>Search</span>
+                                </a>
+                                <a href="#" class="nav-item active">
+                                    <i data-lucide="library"></i>
+                                    <span>Library</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="target"></i>
+                                    <span>Goals</span>
+                                </a>
+                                <a href="#" class="nav-item">
+                                    <i data-lucide="user"></i>
+                                    <span>Profile</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 48px 0; color: var(--gray-700);">
+            <div class="text-body">Media Tracker • Neobrutalist Wireframes</div>
+            <div class="text-body-sm" style="margin-top: 8px;">Space Grotesk • Lucide Icons • 16 Complete Screens</div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>

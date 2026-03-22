@@ -1,0 +1,116 @@
+[tools]
+# Deno is used to run the Supabase Edge Functions
+deno = "2"
+
+[env]
+# Supabase API gateway URL
+SUPABASE_URL = "http://127.0.0.1:54321"
+
+# Supabase JWT keys (standard local-dev defaults — do NOT use in production)
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7kyqd5wjp7vjXrsgrikuAQKkx13cgogHaVc"
+SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0"
+
+# Postgres connection (used by standalone Docker Compose tooling)
+DATABASE_URL = "postgresql://postgres:postgres@localhost:54322/postgres"
+POSTGRES_PASSWORD = "postgres"
+
+# Optional OpenAI API key for Supabase Studio's AI assistant
+OPENAI_API_KEY = ""
+
+# ─── Dev workflow (full Supabase CLI stack) ────────────────────────────────────
+#
+#   Quick start:
+#     mise run dev           ← starts DB + resets schema/seed + serves API
+#
+#   Or step by step:
+#     mise run dev:db:start  ← spins up all Supabase Docker containers
+#     mise run dev:db:reset  ← re-runs migrations and seed data
+#     mise run dev:api       ← starts the Edge Function dev server (hot-reload)
+#
+#   The Edge Function is served at:
+#     http://127.0.0.1:54321/functions/v1/api
+#
+# ─── Standalone DB (docker compose, no Supabase CLI needed) ───────────────────
+#
+#   mise run docker:up     ← starts Postgres + runs migrations + seed
+#   mise run docker:down   ← stops and removes containers
+#   mise run docker:reset  ← wipes volumes and restarts fresh
+#
+# ──────────────────────────────────────────────────────────────────────────────
+
+[tasks.dev]
+description = "Full clean start: boot DB stack, reset schema/seed, then serve API"
+run = """
+  npx supabase start && \
+  npx supabase db reset && \
+  mise run dev:api
+"""
+
+[tasks."dev:start"]
+description = "Start the DB stack and serve API without resetting the database"
+run = """
+  npx supabase start && \
+  mise run dev:api
+"""
+
+[tasks."dev:api"]
+description = "Serve the API Edge Function with hot-reload against the local Supabase stack"
+run = "npx supabase functions serve api"
+
+[tasks."dev:db:start"]
+description = "Start the local Supabase Docker stack (Postgres, Auth, Storage, Studio, etc.)"
+run = "npx supabase start"
+
+[tasks."dev:db:stop"]
+description = "Stop the local Supabase Docker stack"
+run = "npx supabase stop"
+
+[tasks."dev:db:reset"]
+description = "Drop and recreate the local DB: re-runs all migrations then seeds data"
+run = "npx supabase db reset"
+
+[tasks."dev:db:status"]
+description = "Print the local Supabase API URLs, anon key, and service role key"
+run = "npx supabase status"
+
+[tasks."db:migrate"]
+description = "Create a new migration file  (e.g. mise run db:migrate -- add_user_avatars)"
+run = "npx supabase migration new $1"
+
+[tasks.lint]
+description = "Lint SQL migration files with squawk"
+run = "npm run lint:sql"
+
+[tasks.install]
+description = "Install Node.js dependencies"
+run = "npm install"
+
+# ─── Docker Compose tasks (standalone Postgres + migration runner) ─────────────
+
+[tasks."docker:up"]
+description = "Start the standalone Postgres container and run migrations + seed"
+run = "docker compose up -d --wait"
+
+[tasks."docker:down"]
+description = "Stop and remove the standalone Postgres containers"
+run = "docker compose down"
+
+[tasks."docker:reset"]
+description = "Wipe the Postgres volume and restart fresh (re-runs migrations + seed)"
+run = "docker compose down -v && docker compose up -d --wait"
+
+[tasks."docker:logs"]
+description = "Tail docker compose logs"
+run = "docker compose logs -f"
+
+[tasks."docker:psql"]
+description = "Open an interactive psql shell via docker compose"
+run = "docker compose exec db psql -U postgres postgres"
+
+[tasks."dev:db:logs"]
+description = "Follow the Postgres container logs"
+run = "npx supabase logs db"
+
+[tasks."dev:db:psql"]
+description = "Open an interactive psql shell to the local database"
+run = "psql postgresql://postgres:postgres@localhost:54322/postgres"

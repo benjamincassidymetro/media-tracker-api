@@ -55,7 +55,7 @@ export const curatedBooks = [
   { title: "Brave New World", author: "Aldous Huxley" },
   { title: "Jane Eyre", author: "Charlotte Brontë" },
   // ... 40 more classics
-  
+
   // FANTASY & SCI-FI (50)
   { title: "The Lord of the Rings", author: "J.R.R. Tolkien" },
   { title: "The Hobbit", author: "J.R.R. Tolkien" },
@@ -73,7 +73,7 @@ export const curatedBooks = [
   { title: "The Name of the Wind", author: "Patrick Rothfuss" },
   { title: "Mistborn", author: "Brandon Sanderson" },
   // ... 35 more fantasy/sci-fi
-  
+
   // YOUNG ADULT (50)
   { title: "The Hunger Games", author: "Suzanne Collins" },
   { title: "Catching Fire", author: "Suzanne Collins" },
@@ -84,7 +84,7 @@ export const curatedBooks = [
   { title: "The Maze Runner", author: "James Dashner" },
   { title: "Twilight", author: "Stephenie Meyer" },
   // ... 42 more YA
-  
+
   // MYSTERY & THRILLER (50)
   { title: "The Girl with the Dragon Tattoo", author: "Stieg Larsson" },
   { title: "Gone Girl", author: "Gillian Flynn" },
@@ -92,14 +92,14 @@ export const curatedBooks = [
   { title: "Sherlock Holmes", author: "Arthur Conan Doyle" },
   { title: "And Then There Were None", author: "Agatha Christie" },
   // ... 45 more mystery/thriller
-  
+
   // MODERN BESTSELLERS (50)
   { title: "Where the Crawdads Sing", author: "Delia Owens" },
   { title: "The Silent Patient", author: "Alex Michaelides" },
   { title: "Educated", author: "Tara Westover" },
   { title: "Becoming", author: "Michelle Obama" },
   // ... 46 more bestsellers
-  
+
   // NON-FICTION (50)
   { title: "Sapiens", author: "Yuval Noah Harari" },
   { title: "Atomic Habits", author: "James Clear" },
@@ -121,7 +121,7 @@ export const curatedMovies = [
   { title: "The Matrix", year: 1999 },
   { title: "Goodfellas", year: 1990 },
   // ... 40 more classics
-  
+
   // BLOCKBUSTERS (50)
   { title: "Avengers: Endgame", year: 2019 },
   { title: "Avatar", year: 2009 },
@@ -132,28 +132,28 @@ export const curatedMovies = [
   { title: "Inception", year: 2010 },
   { title: "Interstellar", year: 2014 },
   // ... 42 more blockbusters
-  
+
   // ACTION/ADVENTURE (50)
   { title: "Mad Max: Fury Road", year: 2015 },
   { title: "Die Hard", year: 1988 },
   { title: "Raiders of the Lost Ark", year: 1981 },
   { title: "Gladiator", year: 2000 },
   // ... 46 more action
-  
+
   // DRAMA (50)
   { title: "The Social Network", year: 2010 },
   { title: "Parasite", year: 2019 },
   { title: "Moonlight", year: 2016 },
   { title: "12 Years a Slave", year: 2013 },
   // ... 46 more drama
-  
+
   // COMEDY (50)
   { title: "The Grand Budapest Hotel", year: 2014 },
   { title: "Superbad", year: 2007 },
   { title: "Groundhog Day", year: 1993 },
   { title: "The Big Lebowski", year: 1998 },
   // ... 46 more comedy
-  
+
   // SCI-FI/FANTASY (50)
   { title: "Blade Runner", year: 1982 },
   { title: "Dune", year: 2021 },
@@ -202,19 +202,19 @@ export async function searchBook(
 ): Promise<GoogleBooksItem | null> {
   const query = encodeURIComponent(`intitle:${title}+inauthor:${author}`);
   const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1&key=${apiKey}`;
-  
+
   const response = await fetch(url);
   if (!response.ok) {
     console.error(`Google Books API error: ${response.status}`);
     return null;
   }
-  
+
   const data = await response.json();
   if (!data.items || data.items.length === 0) {
     console.warn(`No results for: ${title} by ${author}`);
     return null;
   }
-  
+
   return data.items[0];
 }
 
@@ -224,22 +224,22 @@ export async function searchBookBatch(
   delayMs: number = 1100  // Rate limit: 1 req/second
 ): Promise<GoogleBooksItem[]> {
   const results: GoogleBooksItem[] = [];
-  
+
   for (let i = 0; i < books.length; i++) {
     const book = books[i];
     console.log(`[${i + 1}/${books.length}] Fetching: ${book.title}`);
-    
+
     const result = await searchBook(book.title, book.author, apiKey);
     if (result) {
       results.push(result);
     }
-    
+
     // Rate limiting
     if (i < books.length - 1) {
       await sleep(delayMs);
     }
   }
-  
+
   return results;
 }
 
@@ -311,19 +311,19 @@ export async function searchMovie(
   if (year) {
     url += `&year=${year}`;
   }
-  
+
   const response = await fetch(url);
   if (!response.ok) {
     console.error(`TMDB API error: ${response.status}`);
     return null;
   }
-  
+
   const data = await response.json();
   if (!data.results || data.results.length === 0) {
     console.warn(`No results for: ${title} (${year})`);
     return null;
   }
-  
+
   return data.results[0];
 }
 
@@ -332,13 +332,13 @@ export async function getMovieDetails(
   apiKey: string
 ): Promise<TMDBMovieDetails | null> {
   const url = `https://api.themoviedb.org/3/movie/${movieId}?api_key=${apiKey}&append_to_response=credits`;
-  
+
   const response = await fetch(url);
   if (!response.ok) {
     console.error(`TMDB API error: ${response.status}`);
     return null;
   }
-  
+
   return await response.json();
 }
 
@@ -348,29 +348,29 @@ export async function searchMovieBatch(
   delayMs: number = 300  // TMDB allows more requests
 ): Promise<TMDBMovieDetails[]> {
   const results: TMDBMovieDetails[] = [];
-  
+
   for (let i = 0; i < movies.length; i++) {
     const movie = movies[i];
     console.log(`[${i + 1}/${movies.length}] Fetching: ${movie.title}`);
-    
+
     // Search for movie
     const searchResult = await searchMovie(movie.title, movie.year || null, apiKey);
     if (!searchResult) {
       continue;
     }
-    
+
     // Get full details (includes runtime and director)
     const details = await getMovieDetails(searchResult.id, apiKey);
     if (details) {
       results.push(details);
     }
-    
+
     // Rate limiting
     if (i < movies.length - 1) {
       await sleep(delayMs);
     }
   }
-  
+
   return results;
 }
 
@@ -416,7 +416,7 @@ export interface NormalizedMedia {
 
 export function normalizeBook(book: GoogleBooksItem): NormalizedMedia {
   const volumeInfo = book.volumeInfo;
-  
+
   return {
     media_type: 'book',
     title: volumeInfo.title,
@@ -424,8 +424,8 @@ export function normalizeBook(book: GoogleBooksItem): NormalizedMedia {
     director: null,
     cover_url: volumeInfo.imageLinks?.thumbnail?.replace('http://', 'https://') || null,
     description: volumeInfo.description || null,
-    published_year: volumeInfo.publishedDate 
-      ? parseInt(volumeInfo.publishedDate.substring(0, 4)) 
+    published_year: volumeInfo.publishedDate
+      ? parseInt(volumeInfo.publishedDate.substring(0, 4))
       : null,
     page_count: volumeInfo.pageCount || null,
     runtime_minutes: null,
@@ -441,12 +441,12 @@ export function normalizeMovie(movie: TMDBMovieDetails): NormalizedMedia {
     title: movie.title,
     author: null,
     director: getDirector(movie.credits),
-    cover_url: movie.poster_path 
-      ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
+    cover_url: movie.poster_path
+      ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
       : null,
     description: movie.overview || null,
-    published_year: movie.release_date 
-      ? parseInt(movie.release_date.substring(0, 4)) 
+    published_year: movie.release_date
+      ? parseInt(movie.release_date.substring(0, 4))
       : null,
     page_count: null,
     runtime_minutes: movie.runtime || null,
@@ -481,36 +481,36 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 async function main() {
   console.log('🌱 Starting media database seeding...\n');
-  
+
   // Fetch books from Google Books API
   console.log('📚 Fetching books from Google Books API...');
   const googleBooks = await searchBookBatch(curatedBooks, GOOGLE_BOOKS_API_KEY);
   console.log(`✅ Fetched ${googleBooks.length} books\n`);
-  
+
   // Fetch movies from TMDB API
   console.log('🎬 Fetching movies from TMDB API...');
   const tmdbMovies = await searchMovieBatch(curatedMovies, TMDB_API_KEY);
   console.log(`✅ Fetched ${tmdbMovies.length} movies\n`);
-  
+
   // Normalize data
   console.log('🔄 Normalizing data...');
   const normalizedBooks = googleBooks.map(normalizeBook);
   const normalizedMovies = tmdbMovies.map(normalizeMovie);
   const allMedia = [...normalizedBooks, ...normalizedMovies];
   console.log(`✅ Normalized ${allMedia.length} total media items\n`);
-  
+
   // Insert into Supabase (in batches of 100)
   console.log('💾 Inserting into Supabase...');
   let insertedCount = 0;
-  
+
   for (let i = 0; i < allMedia.length; i += 100) {
     const batch = allMedia.slice(i, i + 100);
-    
+
     const { data, error } = await supabase
       .from('media')
       .insert(batch)
       .select();
-    
+
     if (error) {
       console.error(`❌ Batch ${i / 100 + 1} error:`, error.message);
     } else {
@@ -518,13 +518,13 @@ async function main() {
       console.log(`✅ Batch ${i / 100 + 1}: Inserted ${data?.length} items`);
     }
   }
-  
+
   console.log(`\n✅ Total inserted: ${insertedCount} media items`);
-  
+
   // Export as SQL seed file
   console.log('\n📝 Exporting as SQL seed file...');
   await exportToSQL();
-  
+
   console.log('\n🎉 Seeding complete!');
   console.log('\nNext steps:');
   console.log('1. Check media_seed.sql file');
@@ -537,16 +537,16 @@ async function exportToSQL() {
     .from('media')
     .select('*')
     .order('id');
-  
+
   if (error) {
     console.error('Error fetching media for export:', error);
     return;
   }
-  
+
   let sql = '-- Media Tracker Seed Data\n';
   sql += '-- Generated: ' + new Date().toISOString() + '\n\n';
   sql += '-- Insert media items\n';
-  
+
   data?.forEach(item => {
     const values = [
       item.media_type,
@@ -562,10 +562,10 @@ async function exportToSQL() {
       item.isbn ? `'${item.isbn}'` : 'NULL',
       `'${item.language}'`
     ];
-    
+
     sql += `INSERT INTO media (media_type, title, author, director, cover_url, description, published_year, page_count, runtime_minutes, genres, isbn, language) VALUES ('${values.join("', '")}');\n`;
   });
-  
+
   fs.writeFileSync('media_seed.sql', sql);
   console.log('✅ Exported to media_seed.sql');
 }
@@ -600,13 +600,15 @@ main().catch(console.error);
 
 ## Environment Variables
 
-Create `.env` file:
+This script reads values from environment variables (no `.env` file required). For local development, you can set them in `mise.toml` (see the `env` section), or export them in your shell before running the script.
+
+Example (bash/zsh):
 
 ```bash
-SUPABASE_URL=https://yourproject.supabase.co
-SUPABASE_SERVICE_KEY=your-service-role-key-here
-GOOGLE_BOOKS_API_KEY=your-google-books-key
-TMDB_API_KEY=your-tmdb-key
+export SUPABASE_URL=https://yourproject.supabase.co
+export SUPABASE_SERVICE_KEY=your-service-role-key-here
+export GOOGLE_BOOKS_API_KEY=your-google-books-key
+export TMDB_API_KEY=your-tmdb-key
 ```
 
 ---
@@ -626,13 +628,13 @@ npm install
 2. Create project
 3. Enable "Books API"
 4. Create API key
-5. Add to .env
+5. Set it as an environment variable (e.g. in `mise.toml` or via `export`).
 
 **TMDB:**
 1. Go to https://www.themoviedb.org/settings/api
 2. Sign up
 3. Request API key
-4. Add to .env
+4. Set it as an environment variable (e.g. in `mise.toml` or via `export`).
 
 ### Run Seeding
 ```bash

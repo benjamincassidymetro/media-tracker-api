@@ -1,0 +1,67 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Standalone Postgres for local development / CI
+#
+# This compose file provides ONLY the database (Postgres + migration runner).
+# It is useful for:
+#   • Running integration tests in CI
+#   • Inspecting the schema without the full Supabase stack
+#   • Environments where the Supabase CLI is not installed
+#
+# For full local development (Edge Functions + Auth + Studio), use:
+#   mise run dev          ← recommended, starts the full Supabase stack
+#
+# Usage:
+#   docker compose up -d   ← start (runs migrations + seed automatically)
+#   docker compose down    ← stop
+#   docker compose down -v ← wipe data and start fresh
+#
+# After startup the database is available at:
+#   postgresql://postgres:postgres@localhost:54322/postgres
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: media-tracker-api
+
+services:
+  db:
+    # supabase/postgres ships with pg_trgm, uuid-ossp, pgcrypto and the
+    # auth/storage schemas that our migrations depend on.
+    image: supabase/postgres:17.4.1.073
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "54322:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      # Supabase-specific JWT secret (matches the local CLI default)
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  # One-shot container: waits for db to be healthy, then applies every
+  # migration in timestamp order and loads the seed file.
+  db-migrate:
+    image: postgres:17-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATABASE: postgres
+    volumes:
+      - ./supabase/migrations:/migrations:ro
+      - ./supabase/seed.sql:/seed.sql:ro
+      - ./docker/migrate.sh:/migrate.sh:ro
+    entrypoint: ["/bin/sh", "/migrate.sh"]
+
+volumes:
+  db_data:
