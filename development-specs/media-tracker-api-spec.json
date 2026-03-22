@@ -1,0 +1,1032 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Media Tracker API",
+    "description": "RESTful API for tracking books and movies. Students build this as their parallel project.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://{project-id}.supabase.co/functions/v1",
+      "description": "Supabase Edge Functions"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/signup": {
+      "post": {
+        "summary": "Create new account",
+        "tags": ["Authentication"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "username", "displayName"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 8 },
+                  "username": { "type": "string", "minLength": 3 },
+                  "displayName": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login to account",
+        "tags": ["Authentication"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Refresh access token",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refreshToken"],
+                "properties": {
+                  "refreshToken": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media": {
+      "get": {
+        "summary": "Search and list media",
+        "tags": ["Media"],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "description": "Search query for title, author, or director",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filter by media type",
+            "schema": {
+              "type": "string",
+              "enum": ["book", "movie"]
+            }
+          },
+          {
+            "name": "genre",
+            "in": "query",
+            "description": "Filter by genre",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of results per page",
+            "schema": { "type": "integer", "default": 20, "minimum": 1, "maximum": 100 }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Offset for pagination",
+            "schema": { "type": "integer", "default": 0, "minimum": 0 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of media",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Media" }
+                    },
+                    "total": { "type": "integer" },
+                    "limit": { "type": "integer" },
+                    "offset": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/{id}": {
+      "get": {
+        "summary": "Get media details",
+        "tags": ["Media"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Media details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MediaDetail" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "summary": "Get current user profile",
+        "tags": ["Users"],
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserProfile" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update current user profile",
+        "tags": ["Users"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": { "type": "string" },
+                  "username": { "type": "string" },
+                  "bio": { "type": "string", "maxLength": 500 },
+                  "avatarUrl": { "type": "string", "format": "uri" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserProfile" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "summary": "Get user profile by ID",
+        "tags": ["Users"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserProfile" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/library": {
+      "get": {
+        "summary": "Get my library",
+        "tags": ["Library"],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by status",
+            "schema": {
+              "type": "string",
+              "enum": ["want_to", "reading", "finished"]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer", "default": 0 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Library items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/LibraryItem" }
+                    },
+                    "total": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add media to library",
+        "tags": ["Library"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["mediaId", "status"],
+                "properties": {
+                  "mediaId": { "type": "integer" },
+                  "status": {
+                    "type": "string",
+                    "enum": ["want_to", "reading", "finished"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Added to library",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LibraryItem" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/library/{mediaId}": {
+      "put": {
+        "summary": "Update library item status",
+        "tags": ["Library"],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["want_to", "reading", "finished"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LibraryItem" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove from library",
+        "tags": ["Library"],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed from library"
+          }
+        }
+      }
+    },
+    "/reviews": {
+      "get": {
+        "summary": "Get reviews",
+        "tags": ["Reviews"],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "query",
+            "description": "Filter by media ID",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "Filter by user ID",
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer", "default": 0 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of reviews",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Review" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create review",
+        "tags": ["Reviews"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["mediaId", "rating"],
+                "properties": {
+                  "mediaId": { "type": "integer" },
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "reviewText": { "type": "string", "maxLength": 500 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Review" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reviews/{mediaId}": {
+      "put": {
+        "summary": "Update review",
+        "tags": ["Reviews"],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "reviewText": { "type": "string", "maxLength": 500 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Review updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Review" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete review",
+        "tags": ["Reviews"],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Review deleted"
+          }
+        }
+      }
+    },
+    "/activity": {
+      "get": {
+        "summary": "Get activity feed",
+        "tags": ["Social"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer", "default": 0 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity feed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Activity" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/followers": {
+      "get": {
+        "summary": "Get followers/following",
+        "tags": ["Social"],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Get followers or following",
+            "schema": {
+              "type": "string",
+              "enum": ["followers", "following"],
+              "default": "followers"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "description": "User ID (defaults to current user)",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/UserProfile" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/followers/{userId}": {
+      "post": {
+        "summary": "Follow user",
+        "tags": ["Social"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Now following user"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unfollow user",
+        "tags": ["Social"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Unfollowed user"
+          }
+        }
+      }
+    },
+    "/goals": {
+      "get": {
+        "summary": "Get reading goals",
+        "tags": ["Goals"],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reading goals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ReadingGoal" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create reading goal",
+        "tags": ["Goals"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["year", "targetCount"],
+                "properties": {
+                  "year": { "type": "integer" },
+                  "targetCount": { "type": "integer", "minimum": 1 },
+                  "mediaType": {
+                    "type": "string",
+                    "enum": ["book", "movie", "both"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Goal created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadingGoal" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/quotes": {
+      "get": {
+        "summary": "Get quotes",
+        "tags": ["Quotes"],
+        "parameters": [
+          {
+            "name": "public",
+            "in": "query",
+            "description": "Get public quotes only",
+            "schema": { "type": "boolean", "default": false }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of quotes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Quote" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create quote",
+        "tags": ["Quotes"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["mediaId", "quoteText"],
+                "properties": {
+                  "mediaId": { "type": "integer" },
+                  "quoteText": { "type": "string", "maxLength": 500 },
+                  "pageNumber": { "type": "integer" },
+                  "isPublic": { "type": "boolean", "default": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Quote created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Quote" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/quotes/{id}": {
+      "put": {
+        "summary": "Update quote",
+        "tags": ["Quotes"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quoteText": { "type": "string", "maxLength": 500 },
+                  "isPublic": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Quote updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Quote" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete quote",
+        "tags": ["Quotes"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Quote deleted"
+          }
+        }
+      }
+    },
+    "/quotes/{id}/like": {
+      "post": {
+        "summary": "Like quote",
+        "tags": ["Quotes"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Quote liked"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unlike quote",
+        "tags": ["Quotes"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Quote unliked"
+          }
+        }
+      }
+    },
+    "/priorities": {
+      "get": {
+        "summary": "Get want-to priorities",
+        "tags": ["Priorities"],
+        "responses": {
+          "200": {
+            "description": "Prioritized list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Priority" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update priority order",
+        "tags": ["Priorities"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["mediaId"],
+                "properties": {
+                  "mediaId": { "type": "integer" },
+                  "priority": { "type": "integer", "minimum": 1, "maximum": 3 },
+                  "orderIndex": { "type": "integer" },
+                  "estimatedTimeHours": { "type": "integer" },
+                  "notes": { "type": "string", "maxLength": 200 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Priority updated"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/UserProfile" }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "bio": { "type": "string" },
+          "avatarUrl": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Media": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "mediaType": { "type": "string", "enum": ["book", "movie"] },
+          "title": { "type": "string" },
+          "author": { "type": "string" },
+          "director": { "type": "string" },
+          "coverUrl": { "type": "string" },
+          "publishedYear": { "type": "integer" },
+          "averageRating": { "type": "number" },
+          "ratingCount": { "type": "integer" },
+          "genres": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "MediaDetail": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Media" },
+          {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "pageCount": { "type": "integer" },
+              "runtimeMinutes": { "type": "integer" },
+              "isbn": { "type": "string" },
+              "reviewCount": { "type": "integer" }
+            }
+          }
+        ]
+      },
+      "LibraryItem": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string", "format": "uuid" },
+          "mediaId": { "type": "integer" },
+          "status": { "type": "string", "enum": ["want_to", "reading", "finished"] },
+          "addedAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "media": { "$ref": "#/components/schemas/Media" }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string", "format": "uuid" },
+          "mediaId": { "type": "integer" },
+          "rating": { "type": "integer" },
+          "reviewText": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "user": { "$ref": "#/components/schemas/UserProfile" },
+          "media": { "$ref": "#/components/schemas/Media" }
+        }
+      },
+      "Activity": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "userId": { "type": "string", "format": "uuid" },
+          "activityType": { "type": "string", "enum": ["review", "added", "finished", "started"] },
+          "mediaId": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "user": { "$ref": "#/components/schemas/UserProfile" },
+          "media": { "$ref": "#/components/schemas/Media" }
+        }
+      },
+      "ReadingGoal": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "userId": { "type": "string", "format": "uuid" },
+          "year": { "type": "integer" },
+          "targetCount": { "type": "integer" },
+          "currentCount": { "type": "integer" },
+          "mediaType": { "type": "string" }
+        }
+      },
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "userId": { "type": "string", "format": "uuid" },
+          "mediaId": { "type": "integer" },
+          "quoteText": { "type": "string" },
+          "pageNumber": { "type": "integer" },
+          "isPublic": { "type": "boolean" },
+          "likeCount": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "media": { "$ref": "#/components/schemas/Media" }
+        }
+      },
+      "Priority": {
+        "type": "object",
+        "properties": {
+          "mediaId": { "type": "integer" },
+          "priority": { "type": "integer" },
+          "orderIndex": { "type": "integer" },
+          "estimatedTimeHours": { "type": "integer" },
+          "notes": { "type": "string" },
+          "media": { "$ref": "#/components/schemas/Media" }
+        }
+      }
+    }
+  }
+}
