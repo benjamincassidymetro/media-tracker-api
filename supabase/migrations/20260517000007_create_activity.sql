@@ -13,14 +13,5 @@ CREATE INDEX idx_activity_created_at ON activity (created_at DESC);
 
 ALTER TABLE activity ENABLE ROW LEVEL SECURITY;
 
--- Users see their own activity and activity from users they follow.
--- Only service role may insert (Edge Functions write activity as a side effect).
-CREATE POLICY "activity_select"
-  ON activity FOR SELECT USING (
-    user_id = auth.uid()
-    OR
-    EXISTS (
-      SELECT 1 FROM follows
-      WHERE follower_id = auth.uid() AND followee_id = activity.user_id
-    )
-  );
+-- activity_select policy is defined in 20260517000008_create_follows.sql
+-- because it references the follows table.

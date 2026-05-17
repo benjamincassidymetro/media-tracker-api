@@ -62,11 +62,12 @@ All SQL can be run via the Supabase SQL editor or migration files.
 
 Files under `supabase/functions/_shared/`.
 
-- [ ] `db.ts` — Supabase admin client (service role key from env); export `supabaseAdmin`
-- [ ] `auth.ts` — `requireAuth(req)` that verifies JWT, returns `{ userId: string }`; throws `AuthError` on failure; export `AuthError`
-- [ ] `cursor.ts` — `encodeCursor(obj)` and `decodeCursor(str)` (base64url JSON); helpers for each sort type
-- [ ] `response.ts` — `paginatedResponse(items, limit, cursorFn)` that sets `X-Has-More` + `X-Next-Cursor` headers; `errorResponse(status, message)` helper
-- [ ] `validate.ts` — `isValidUUID(str)` helper
+- [x] `db.ts` — Supabase admin client (service role key from env); export `supabaseAdmin`
+- [x] `auth.ts` — `requireAuth(req)` that verifies JWT, returns `{ userId: string }`; throws `AuthError` on failure; export `AuthError`
+- [x] `cursor.ts` — `encodeCursor(obj)` and `decodeCursor(str)` (base64url JSON); helpers for each sort type
+- [x] `response.ts` — `paginatedResponse(items, limit, cursorFn)` that sets `X-Has-More` + `X-Next-Cursor` headers; `errorResponse(status, message)` helper
+- [x] `validate.ts` — `isValidUUID(str)` helper
+- [x] `types.ts` — DB row types + API formatter functions for all resources
 
 ---
 
@@ -79,63 +80,63 @@ Each function is a Deno module at `supabase/functions/{name}/index.ts`. All func
 - Return `{ "message": "..." }` errors
 
 ### 3.1 `tokens` — `POST /tokens`
-- [ ] Parse body, validate `grantType` is `password` or `refreshToken`
-- [ ] Validate `clientId` + `clientSecret` against `oauth_clients` (bcrypt verify)
-- [ ] **Password grant:** look up user by email in `auth.users`, verify password via Supabase Admin API (`supabase.auth.admin.signInWithPassword` or direct bcrypt check), issue JWT + refresh token
-- [ ] **Refresh token grant:** SHA-256 hash incoming token, look up in `refresh_tokens` (not revoked, not expired), revoke old token, issue new JWT + refresh token
-- [ ] JWT payload: `{ sub, email, role: "authenticated", iat, exp: iat + 1800 }`
-- [ ] Refresh token: 32-byte random, base64url encoded, stored as SHA-256 hex, expires in 7 days
-- [ ] Return `{ accessToken, refreshToken, user: UserProfile }`
+- [x] Parse body, validate `grantType` is `password` or `refreshToken`
+- [x] Validate `clientId` + `clientSecret` against `oauth_clients` (bcrypt verify)
+- [x] **Password grant:** look up user by email in `auth.users`, verify password via Supabase Admin API (`supabase.auth.admin.signInWithPassword` or direct bcrypt check), issue JWT + refresh token
+- [x] **Refresh token grant:** SHA-256 hash incoming token, look up in `refresh_tokens` (not revoked, not expired), revoke old token, issue new JWT + refresh token
+- [x] JWT payload: `{ sub, email, role: "authenticated", iat, exp: iat + 1800 }`
+- [x] Refresh token: 32-byte random, base64url encoded, stored as SHA-256 hex, expires in 7 days
+- [x] Return `{ accessToken, refreshToken, user: UserProfile }`
 
 ### 3.2 `users` — All `/users/*` routes
-- [ ] Route dispatcher (literal checks before UUID parse — see routing-spec.md)
-- [ ] `POST /users` (no auth): validate clientId/clientSecret; create auth.users via `supabase.auth.admin.createUser`; insert into `public.users`; return 201 with UserProfile; 409 on duplicate email/username
-- [ ] `GET /users/me` (auth): fetch own profile; omit `isFollowing` field
-- [ ] `PUT /users/me` (auth): update displayName/username/bio/avatarUrl; 409 on duplicate username
-- [ ] `GET /users/search` (auth): search by username/displayName ILIKE; cursor paginated by `id ASC`; include `isFollowing` for each result
-- [ ] `GET /users/{id}` (auth): fetch profile by UUID; compute `isFollowing`; 404 if not found
-- [ ] `GET /users/{id}/followers` (auth): list users who follow target; cursor paginated `created_at DESC`; include `isFollowing` for each
-- [ ] `GET /users/{id}/following` (auth): list users target follows; cursor paginated `created_at DESC`; include `isFollowing` for each
-- [ ] `POST /users/{id}/following` (auth): insert into `follows`; 400 on self-follow; 409 on already following
-- [ ] `DELETE /users/{id}/following` (auth): delete from `follows`; 204
-- [ ] `GET /users/{id}/activity` (auth): user's public activity, cursor paginated `created_at DESC, id DESC`; join user + media on each activity item
-- [ ] `GET /users/{id}/library` (auth): target user's library, cursor paginated `added_at DESC, media_id DESC`; optional `?status=` filter; join media on each item
+- [x] Route dispatcher (literal checks before UUID parse — see routing-spec.md)
+- [x] `POST /users` (no auth): validate clientId/clientSecret; create auth.users via `supabase.auth.admin.createUser`; insert into `public.users`; return 201 with UserProfile; 409 on duplicate email/username
+- [x] `GET /users/me` (auth): fetch own profile; omit `isFollowing` field
+- [x] `PUT /users/me` (auth): update displayName/username/bio/avatarUrl; 409 on duplicate username
+- [x] `GET /users/search` (auth): search by username/displayName ILIKE; cursor paginated by `id ASC`; include `isFollowing` for each result
+- [x] `GET /users/{id}` (auth): fetch profile by UUID; compute `isFollowing`; 404 if not found
+- [x] `GET /users/{id}/followers` (auth): list users who follow target; cursor paginated `created_at DESC`; include `isFollowing` for each
+- [x] `GET /users/{id}/following` (auth): list users target follows; cursor paginated `created_at DESC`; include `isFollowing` for each
+- [x] `POST /users/{id}/following` (auth): insert into `follows`; 400 on self-follow; 409 on already following
+- [x] `DELETE /users/{id}/following` (auth): delete from `follows`; 204
+- [x] `GET /users/{id}/activity` (auth): user's public activity, cursor paginated `created_at DESC, id DESC`; join user + media on each activity item
+- [x] `GET /users/{id}/library` (auth): target user's library, cursor paginated `added_at DESC, media_id DESC`; optional `?status=` filter; join media on each item
 
 ### 3.3 `media` — `GET /media`, `GET /media/{id}`
-- [ ] `GET /media` (auth): paginated list, sorted `id ASC`; optional `?query=`, `?type=`, `?genre=` filters; full-text search on title using `to_tsvector`; cursor by `id`
-- [ ] `GET /media/{id}` (auth): full MediaDetail response; 404 if not found
+- [x] `GET /media` (auth): paginated list, sorted `id ASC`; optional `?query=`, `?type=`, `?genre=` filters; full-text search on title using `to_tsvector`; cursor by `id`
+- [x] `GET /media/{id}` (auth): full MediaDetail response; 404 if not found
 
 ### 3.4 `library` — `/library` and `/library/{mediaId}`
-- [ ] `GET /library` (auth): own library, cursor paginated `added_at DESC, media_id DESC`; optional `?status=` filter; join media
-- [ ] `POST /library` (auth): insert library_items; 409 on duplicate; create activity record as side effect
-- [ ] `GET /library/{mediaId}` (auth): single library entry; 404 if not in library; join media
-- [ ] `PUT /library/{mediaId}` (auth): update status; fetch current status first; create activity record only if status changed (and not to want_to); 404 if not in library
-- [ ] `DELETE /library/{mediaId}` (auth): delete from library_items; 204
+- [x] `GET /library` (auth): own library, cursor paginated `added_at DESC, media_id DESC`; optional `?status=` filter; join media
+- [x] `POST /library` (auth): insert library_items; 409 on duplicate; create activity record as side effect
+- [x] `GET /library/{mediaId}` (auth): single library entry; 404 if not in library; join media
+- [x] `PUT /library/{mediaId}` (auth): update status; fetch current status first; create activity record only if status changed (and not to want_to); 404 if not in library
+- [x] `DELETE /library/{mediaId}` (auth): delete from library_items; 204
 
 ### 3.5 `reviews` — `/reviews` and `/reviews/{id}`
-- [ ] `GET /reviews` (auth): list reviews; filter by `?mediaId=` or `?userId=`; cursor paginated `created_at DESC, id DESC`; join user + media
-- [ ] `POST /reviews` (auth): insert review; 409 on duplicate; if shareToFeed=true, insert activity record
-- [ ] `PUT /reviews/{id}` (auth): update rating/reviewText; 403 if not author; 404 if not found; do NOT create new activity record
-- [ ] `DELETE /reviews/{id}` (auth): delete review; 403 if not author; 204; activity record from original review is preserved (historical)
+- [x] `GET /reviews` (auth): list reviews; filter by `?mediaId=` or `?userId=`; cursor paginated `created_at DESC, id DESC`; join user + media
+- [x] `POST /reviews` (auth): insert review; 409 on duplicate; if shareToFeed=true, insert activity record
+- [x] `PUT /reviews/{id}` (auth): update rating/reviewText; 403 if not author; 404 if not found; do NOT create new activity record
+- [x] `DELETE /reviews/{id}` (auth): delete review; 403 if not author; 204; activity record from original review is preserved (historical)
 
 ### 3.6 `activity` — `GET /activity`
-- [ ] `GET /activity` (auth): activity from followed users; cursor paginated `created_at DESC, id DESC`; join user + media on each item
+- [x] `GET /activity` (auth): activity from followed users; cursor paginated `created_at DESC, id DESC`; join user + media on each item
 
 ### 3.7 `goals` — `GET /goals`, `POST /goals`
-- [ ] `GET /goals` (auth): return all goals for user; optional `?year=` filter; compute `current_count` live via SQL aggregate (see database-schema.md for query); not paginated
-- [ ] `POST /goals` (auth): insert goal; 409 on duplicate `(user_id, year, media_type)`
+- [x] `GET /goals` (auth): return all goals for user; optional `?year=` filter; compute `current_count` live in JS by filtering finished library items; not paginated
+- [x] `POST /goals` (auth): insert goal; 409 on duplicate `(user_id, year, media_type)`
 
 ### 3.8 `quotes` — `/quotes` and `/quotes/{id}` and `/quotes/{id}/likes`
-- [ ] `GET /quotes` (auth): own quotes + public quotes if `?public=true`; cursor paginated `created_at DESC, id DESC`; join media
-- [ ] `POST /quotes` (auth): insert quote
-- [ ] `PUT /quotes/{id}` (auth): update quoteText/isPublic; 403 if not author; 404 if not found
-- [ ] `DELETE /quotes/{id}` (auth): delete quote; 403 if not author; 204
-- [ ] `POST /quotes/{id}/likes` (auth): insert quote_like; 409 on duplicate
-- [ ] `DELETE /quotes/{id}/likes` (auth): delete quote_like; 204
+- [x] `GET /quotes` (auth): own quotes + public quotes if `?public=true`; cursor paginated `created_at DESC, id DESC`; join media
+- [x] `POST /quotes` (auth): insert quote
+- [x] `PUT /quotes/{id}` (auth): update quoteText/isPublic; 403 if not author; 404 if not found
+- [x] `DELETE /quotes/{id}` (auth): delete quote; 403 if not author; 204
+- [x] `POST /quotes/{id}/likes` (auth): insert quote_like; 409 on duplicate
+- [x] `DELETE /quotes/{id}/likes` (auth): delete quote_like; 204
 
 ### 3.9 `priorities` — `GET /priorities`, `PUT /priorities`
-- [ ] `GET /priorities` (auth): return user's priority list ordered by `order_index`; join media; not paginated (max 5)
-- [ ] `PUT /priorities` (auth): upsert priority row; check count < 5 before insert (400 if exceeded); return updated priority with media
+- [x] `GET /priorities` (auth): return user's priority list ordered by `order_index`; join media; not paginated (max 5)
+- [x] `PUT /priorities` (auth): upsert priority row; check count < 5 before insert (400 if exceeded); return updated priority with media
 
 ---
 
@@ -156,9 +157,9 @@ Each function is a Deno module at `supabase/functions/{name}/index.ts`. All func
 
 ## Phase 5 — Configuration & Documentation
 
-- [ ] `supabase/config.toml` — configure function names, JWT secret reference
-- [ ] `backend/scripts/.env.example` — document required env vars (no secrets)
-- [ ] Add `.gitignore` entries for `backend/scripts/.env` and `backend/scripts/seed-errors.json`
+- [x] `supabase/config.toml` — configure function names, JWT secret reference
+- [x] `mise.toml` — all local dev env vars documented in `[env]` section; secrets go in `mise.local.toml`
+- [x] `.gitignore` — covers `backend/scripts/seed-errors.json` and `mise.local.toml`
 - [ ] Verify OpenAPI spec (`docs/media-tracker-api-spec.json`) matches implementation
 
 ---

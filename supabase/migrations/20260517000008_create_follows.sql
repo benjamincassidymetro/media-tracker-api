@@ -39,3 +39,14 @@ CREATE POLICY "follows_insert_own"
 
 CREATE POLICY "follows_delete_own"
   ON follows FOR DELETE USING (auth.uid() = follower_id);
+
+-- Defined here (not in 00007) because it references follows which didn't exist yet.
+CREATE POLICY "activity_select"
+  ON activity FOR SELECT USING (
+    user_id = auth.uid()
+    OR
+    EXISTS (
+      SELECT 1 FROM follows
+      WHERE follower_id = auth.uid() AND followee_id = activity.user_id
+    )
+  );

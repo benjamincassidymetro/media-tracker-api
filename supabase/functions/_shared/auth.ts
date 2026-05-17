@@ -1,4 +1,4 @@
-import * as jose from 'jose'
+import * as jose from 'npm:jose@^5'
 
 import { errorResponse } from './response.ts'
 

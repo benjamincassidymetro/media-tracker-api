@@ -2,6 +2,28 @@
 node = "22"
 supabase = "latest"
 
+# ---------------------------------------------------------------------------
+# Local development environment variables
+# These match the default Supabase CLI local stack — safe to commit.
+# For secrets (TMDB_API_KEY, GOOGLE_BOOKS_API_KEY), create mise.local.toml:
+#
+#   [env]
+#   TMDB_API_KEY = "your-key-here"
+#   GOOGLE_BOOKS_API_KEY = "your-key-here"
+#
+# mise.local.toml is gitignored.
+# ---------------------------------------------------------------------------
+
+[env]
+SUPABASE_URL = "http://127.0.0.1:54321"
+# Default local JWT secret used by the Supabase CLI
+SUPABASE_JWT_SECRET = "super-secret-jwt-token-with-at-least-32-characters-long"
+# Default local service role key (signed with the above secret)
+SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0"
+# Set these in mise.local.toml
+TMDB_API_KEY = ""
+GOOGLE_BOOKS_API_KEY = ""
+
 [tasks.start]
 description = "Start the local Supabase stack (Postgres, Auth, Storage, Edge Runtime, Studio)"
 run = "supabase start"
@@ -14,20 +36,20 @@ run = "supabase stop"
 description = "Show status of local Supabase services"
 run = "supabase status"
 
-[tasks.db-reset]
+[tasks."db:reset"]
 description = "Wipe the local database and re-run all migrations from scratch"
 run = "supabase db reset"
 
-[tasks.db-migrate]
+[tasks."db:migrate"]
 description = "Apply pending migrations to the local database"
 run = "supabase migration up --local"
 
-[tasks.functions-serve]
+[tasks."functions:serve"]
 description = "Serve all edge functions locally with hot reload"
-run = "supabase functions serve --env-file supabase/.env.local"
+run = "supabase functions serve"
 
 [tasks.seed]
-description = "Run the media seed script (requires TMDB_API_KEY and GOOGLE_BOOKS_API_KEY in backend/scripts/.env)"
+description = "Run the media seed script (set TMDB_API_KEY and GOOGLE_BOOKS_API_KEY in mise.local.toml)"
 run = "tsx backend/scripts/seed.ts"
 
 [tasks.lint]
@@ -38,7 +60,7 @@ run = "eslint backend/"
 description = "Format all files with Prettier"
 run = "prettier --write ."
 
-[tasks.format-check]
+[tasks."format:check"]
 description = "Check formatting without writing"
 run = "prettier --check ."
 
@@ -46,14 +68,14 @@ run = "prettier --check ."
 description = "Type-check backend scripts (Deno functions use deno check)"
 run = "tsc --project backend/tsconfig.json --noEmit"
 
-[tasks.deno-check]
+[tasks."deno:check"]
 description = "Type-check all Supabase edge functions"
 run = "deno check supabase/functions/**/*.ts"
 
-[tasks.deno-lint]
+[tasks."deno:lint"]
 description = "Lint all Supabase edge functions"
 run = "deno lint supabase/functions/"
 
-[tasks.deno-format]
+[tasks."deno:format"]
 description = "Format all Supabase edge functions with deno fmt"
 run = "deno fmt supabase/functions/"
