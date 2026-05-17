@@ -4,7 +4,10 @@ import { errorResponse } from './response.ts'
 
 export class AuthError extends Error {}
 
-const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')
+// SUPABASE_JWT_SECRET is auto-injected in production.
+// Locally, supabase functions serve filters SUPABASE_* from --env-file,
+// so we use EDGE_JWT_SECRET as the local override.
+const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET') ?? Deno.env.get('EDGE_JWT_SECRET')
 
 export async function requireAuth(req: Request): Promise<{ userId: string }> {
   const authHeader = req.headers.get('Authorization')

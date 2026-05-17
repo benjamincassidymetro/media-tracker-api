@@ -54,7 +54,7 @@ Content-Type: application/json
 
 {
   "grantType": "password",
-  "email": "alice@mediatracker.dev",
+  "email": "newuser@example.com",
   "password": "Testing123!",
   "clientId": "{{clientId}}",
   "clientSecret": "{{clientSecret}}"

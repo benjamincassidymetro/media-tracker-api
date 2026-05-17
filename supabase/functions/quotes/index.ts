@@ -8,8 +8,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return corsResponse()
 
   const url = new URL(req.url)
-  const parts = url.pathname.replace(/^\/functions\/v1\//, '').split('/')
-  const [, segment, subResource] = parts
+  const [segment, subResource] = url.pathname
+    .replace(/^(?:\/functions\/v1)?\/quotes/, '')
+    .split('/')
+    .filter(Boolean)
 
   let authUserId: string
   try {

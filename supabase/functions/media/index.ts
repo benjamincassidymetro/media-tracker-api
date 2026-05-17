@@ -9,8 +9,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== 'GET') return errorResponse(405, 'Method not allowed.')
 
   const url = new URL(req.url)
-  const parts = url.pathname.replace(/^\/functions\/v1\//, '').split('/')
-  const [, segment] = parts
+  const [segment] = url.pathname
+    .replace(/^(?:\/functions\/v1)?\/media/, '')
+    .split('/')
+    .filter(Boolean)
 
   try {
     await requireAuth(req)

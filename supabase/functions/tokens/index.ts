@@ -1,4 +1,3 @@
-import { createClient } from 'npm:@supabase/supabase-js@^2'
 import bcryptjs from 'npm:bcryptjs@^2'
 import * as jose from 'npm:jose@^5'
 
@@ -8,12 +7,14 @@ import { errorResponse, jsonResponse } from '../_shared/response.ts'
 import { formatUser, type DbUser } from '../_shared/types.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
-const JWT_SECRET = Deno.env.get('SUPABASE_JWT_SECRET')!
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const JWT_SECRET = Deno.env.get('SUPABASE_JWT_SECRET') ?? Deno.env.get('EDGE_JWT_SECRET')
 
-// Used only for password verification — anon key is sufficient
-const supabaseAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: false },
+console.log('[tokens] init — env check:', {
+  hasUrl: !!SUPABASE_URL,
+  hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY,
+  hasJwtSecret: !!JWT_SECRET,
+  envKeys: Object.keys(Deno.env.toObject()),
 })
 
 async function validateClientCredentials(clientId: string, clientSecret: string): Promise<boolean> {
@@ -57,9 +58,30 @@ async function issueRefreshToken(userId: string, clientId: string): Promise<stri
   return token
 }
 
+async function signInWithPassword(email: string, password: string) {
+  // Call the Supabase Auth HTTP API directly — no anon key needed.
+  // The service role key is accepted as the apikey for server-side auth operations.
+  const resp = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+    body: JSON.stringify({ email, password }),
+  })
+  if (!resp.ok) {
+    console.error('[tokens] auth sign-in failed:', resp.status, await resp.text())
+    return null
+  }
+  return resp.json() as Promise<{ user: { id: string; email: string } }>
+}
+
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return corsResponse()
   if (req.method !== 'POST') return errorResponse(405, 'Method not allowed.')
+
+  console.log('[tokens] request:', req.method, new URL(req.url).pathname)
 
   let body: Record<string, unknown>
   try {
@@ -87,13 +109,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const { email, password } = body as { email?: string; password?: string }
     if (!email || !password) return errorResponse(400, 'email and password are required.')
 
-    const { data: authData, error: authError } = await supabaseAnon.auth.signInWithPassword({
-      email,
-      password,
-    })
-    if (authError || !authData.user) {
-      return errorResponse(401, 'Invalid email or password.')
-    }
+    const authData = await signInWithPassword(email, password)
+    if (!authData?.user) return errorResponse(401, 'Invalid email or password.')
 
     const userId = authData.user.id
     const { data: profile, error: profileError } = await db
@@ -102,17 +119,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq('id', userId)
       .single()
     if (profileError || !profile) {
+      console.error('[tokens] profile fetch failed:', profileError)
       return errorResponse(500, 'Something went wrong. Please try again.')
     }
 
-    const accessToken = await issueAccessToken(userId, authData.user.email!)
+    const accessToken = await issueAccessToken(userId, authData.user.email)
     const refreshToken = await issueRefreshToken(userId, clientId)
 
-    return jsonResponse({
-      accessToken,
-      refreshToken,
-      user: formatUser(profile as DbUser),
-    })
+    return jsonResponse({ accessToken, refreshToken, user: formatUser(profile as DbUser) })
   }
 
   // -------------------------------------------------------------------------
@@ -137,7 +151,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (tokenError || !tokenRow) return errorResponse(401, 'Invalid or expired refresh token.')
 
-    // Revoke old token immediately (single-use rotation)
     await db
       .from('refresh_tokens')
       .update({ revoked_at: new Date().toISOString() })
@@ -150,6 +163,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq('id', userId)
       .single()
     if (profileError || !profile) {
+      console.error('[tokens] profile fetch failed:', profileError)
       return errorResponse(500, 'Something went wrong. Please try again.')
     }
 

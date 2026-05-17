@@ -18,7 +18,11 @@ supabase = "latest"
 SUPABASE_URL = "http://127.0.0.1:54321"
 # Default local JWT secret used by the Supabase CLI
 SUPABASE_JWT_SECRET = "super-secret-jwt-token-with-at-least-32-characters-long"
-# Default local service role key (signed with the above secret)
+# supabase functions serve filters SUPABASE_* vars from --env-file, so we use
+# EDGE_JWT_SECRET as a passthrough for the same value in local dev.
+EDGE_JWT_SECRET = "super-secret-jwt-token-with-at-least-32-characters-long"
+# Default local keys (signed with the above secret) — safe to commit, not real secrets
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7W9oNBDAGBwnNAJx8V2YTFF8HH30oO1RJZo"
 SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0"
 # Set these in mise.local.toml
 TMDB_API_KEY = ""
@@ -46,11 +50,14 @@ run = "supabase migration up --local"
 
 [tasks."functions:serve"]
 description = "Serve all edge functions locally with hot reload"
-run = "supabase functions serve"
+run = """
+printf "EDGE_JWT_SECRET=%s\n" "$EDGE_JWT_SECRET" > supabase/.env.local
+supabase functions serve --env-file supabase/.env.local
+"""
 
 [tasks.seed]
 description = "Run the media seed script (set TMDB_API_KEY and GOOGLE_BOOKS_API_KEY in mise.local.toml)"
-run = "tsx backend/scripts/seed.ts"
+run = "npx tsx backend/scripts/seed.ts"
 
 [tasks.lint]
 description = "Lint backend scripts with ESLint"

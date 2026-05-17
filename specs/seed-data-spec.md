@@ -10,34 +10,35 @@ The catalog is built in two phases:
 
 **Phase 1 — Curated picks (120 items):** The 120 items listed in this document are hardcoded in the seed script as a `seedItems` array. These are recognizable, high-quality titles students will actually want to search for. Every item in this list gets full metadata from TMDB or Google Books.
 
-**Phase 2 — Bulk API fill (≥380 more items, target 500+ total):** After seeding the curated list, the script automatically fetches additional titles from TMDB and Google Books to reach the 500-item minimum. This is what makes pagination mandatory — 20 items per page means students need at least 25+ pages of results to work with.
+**Phase 2 — Bulk API fill (≥2,880 more items, target 3,000+ total):** After seeding the curated list, the script automatically fetches additional titles from TMDB and Google Books to reach the 3,000-item minimum. This is what makes the app feel real — students are browsing an actual catalog, not a toy list.
 
 The bulk fill must run after the curated items so their IDs are low and they appear first in unfiltered searches (good for demos). Deduplication is by title + media_type.
 
 ---
 
-## Why 500+?
+## Why 3,000+?
 
-With the default `limit=20`, a search for "movie" with no other filters must span multiple pages before the client even reaches the end. This forces students to implement real pagination — not just load everything and call it done. 500 items guarantees:
-- Any genre filter returns >20 results (multiple pages)
-- Unfiltered listing requires >25 pages
-- The LazyColumn visibly "runs out" of content only after several scrolls
+A catalog this size makes the app feel like a real product, not a classroom exercise. With the default `limit=20`, an unfiltered listing requires 150+ pages — students are building real infinite scroll, not a toy. A 3,000-item catalog also guarantees:
+- Any genre filter returns dozens of results spanning multiple pages
+- Search results feel meaningful — typing "sci" returns a real list, not 3 items
+- The LazyColumn never "runs out" during a normal demo session
+- Students can build a personal library without exhausting the catalog
 
 ---
 
 ## Catalog Size and Composition
 
-**Target: 500+ items minimum** (no hard cap — more is fine)
+**Target: 3,000+ items minimum** (no hard cap — more is fine)
 
 Curated picks (120 items):
 - 40 books
 - 40 movies
 - 40 TV shows
 
-Bulk API fill (380+ additional items):
-- ~130 books (Google Books top-rated / bestseller lists)
-- ~130 movies (TMDB top-rated, pages 1–7)
-- ~120 TV shows (TMDB top-rated, pages 1–6)
+Bulk API fill (2,880+ additional items):
+- ~1,000 books (Google Books, multiple subject queries with pagination)
+- ~1,000 movies (TMDB top-rated, pages 1–50)
+- ~880+ TV shows (TMDB top-rated, pages 1–50)
 
 **Genre distribution** (approximate, items may belong to multiple genres):
 
@@ -284,15 +285,29 @@ The 120 curated items are hardcoded in the script as a `seedItems: SeedItem[]` a
 
 Rate limit: 250ms delay between API calls. Log progress as each item is processed.
 
-**Phase 3 — Bulk fill from TMDB and Google Books (to reach 500+ items)**
+**Phase 3 — Bulk fill from TMDB and Google Books (to reach 3,000+ items)**
 
-After the curated list is processed, fetch additional items from TMDB and Google Books bulk/discovery endpoints until the total item count reaches at least 500. Items already in the curated set are skipped by title + media_type deduplication.
+After the curated list is processed, fetch additional items from TMDB and Google Books bulk/discovery endpoints until the total item count reaches at least 3,000. Items already in the curated set are skipped by title + media_type deduplication.
 
-- **Additional movies:** Fetch TMDB top-rated movies: `GET https://api.themoviedb.org/3/movie/top_rated?page={n}&api_key={key}` — pages 1 through 7 (~140 items). For each movie, fetch full detail for runtime.
+- **Additional movies:** Fetch TMDB top-rated movies: `GET https://api.themoviedb.org/3/movie/top_rated?page={n}&api_key={key}` — pages 1 through 50 (~1,000 items). For each movie, fetch full detail for runtime.
 
-- **Additional TV shows:** Fetch TMDB top-rated TV: `GET https://api.themoviedb.org/3/tv/top_rated?page={n}&api_key={key}` — pages 1 through 6 (~120 items). For each show, fetch full detail for seasons/episodes.
+- **Additional TV shows:** Fetch TMDB top-rated TV: `GET https://api.themoviedb.org/3/tv/top_rated?page={n}&api_key={key}` — pages 1 through 50 (~1,000 items). For each show, fetch full detail for seasons/episodes.
 
-- **Additional books:** Google Books does not have a simple "top rated" list. Use these subject searches to get a diverse set: `subject:fiction`, `subject:science+fiction`, `subject:mystery`, `subject:biography`, `subject:history`. For each, fetch `maxResults=40&orderBy=relevance`. Deduplicate by ISBN and title.
+- **Additional books:** Google Books does not have a simple "top rated" list. Use a broad set of subject searches with pagination to reach ~1,000 books. Run each query with `maxResults=40&startIndex={offset}&orderBy=relevance`, paginating until you have enough or the API stops returning results:
+
+  | Query | Target items |
+  |---|---|
+  | `subject:fiction` | 200 |
+  | `subject:science+fiction` | 120 |
+  | `subject:fantasy` | 120 |
+  | `subject:mystery+thriller` | 120 |
+  | `subject:biography` | 100 |
+  | `subject:history` | 100 |
+  | `subject:nonfiction` | 100 |
+  | `subject:horror` | 80 |
+  | `subject:romance` | 80 |
+
+  Deduplicate by ISBN and title across all queries.
 
 For bulk fill items, `genres` must be derived from the TMDB `genre_ids` field. Maintain a local TMDB genre ID → genre name map (fetch once from `GET /genre/movie/list` and `GET /genre/tv/list` at the start of the bulk fill phase).
 
