@@ -1,0 +1,24 @@
+{
+  "name": "media-tracker-api",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^9",
+    "@types/bcryptjs": "^2",
+    "@types/node": "^22",
+    "@types/sharp": "^0.32",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10",
+    "eslint-plugin-perfectionist": "^4",
+    "prettier": "^3",
+    "tsx": "^4",
+    "typescript": "^5",
+    "typescript-eslint": "^8"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16",
+    "sharp": "^0.33"
+  }
+}

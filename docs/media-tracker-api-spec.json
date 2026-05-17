@@ -1,0 +1,989 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Media Tracker API",
+    "description": "RESTful API for tracking books, movies, and TV shows. Students build an Android client against this API over the course of the semester.\n\n## Pagination\n\nAll list endpoints use **cursor-based pagination**. The response body is always a bare JSON array. Pagination metadata is returned in response headers:\n\n| Header | Description |\n|---|---|\n| `X-Next-Cursor` | Opaque cursor string. Pass as `?after=` on the next request. Absent when there are no more pages. |\n| `X-Has-More` | `\"true\"` or `\"false\"`. Whether more pages exist beyond this response. |\n\n**Example:**\n```\nGET /media?limit=20\n← X-Next-Cursor: eyJpZCI6MjB9\n← X-Has-More: true\n← [ ...20 items... ]\n\nGET /media?limit=20&after=eyJpZCI6MjB9\n← X-Next-Cursor: eyJpZCI6NDB9\n← X-Has-More: true\n← [ ...20 items... ]\n\nGET /media?limit=20&after=eyJpZCI6NDB9\n← X-Has-More: false\n← [ ...12 items... ]\n```\n\nIn Retrofit, use `Response<List<T>>` as the return type to access both the body and headers:\n```kotlin\n@GET(\"media\")\nsuspend fun searchMedia(\n    @Query(\"query\") query: String? = null,\n    @Query(\"limit\") limit: Int = 20,\n    @Query(\"after\") after: String? = null\n): Response<List<Media>>\n\n// In the ViewModel / Repository:\nval response = api.searchMedia(query = \"dune\", limit = 20)\nval items = response.body() ?: emptyList()\nval nextCursor = response.headers()[\"X-Next-Cursor\"]\nval hasMore = response.headers()[\"X-Has-More\"] == \"true\"\n```\n\nStore `nextCursor` in your ViewModel state. Append each page's items to your existing list. Trigger the next load when the user scrolls near the end of the LazyColumn.\n\n**Not paginated:** `GET /goals` and `GET /priorities` return plain arrays with no pagination headers (their results are bounded by design).",
+    "version": "1.3.0"
+  },
+  "servers": [
+    {
+      "url": "https://{project-id}.supabase.co/functions/v1",
+      "description": "Supabase Edge Functions"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/users": {
+      "post": {
+        "summary": "Create account",
+        "description": "Creates a new user account. Does NOT return auth tokens — call POST /tokens with grantType=password immediately after to obtain tokens.",
+        "tags": ["Users"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "username", "displayName", "clientId", "clientSecret"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 8 },
+                  "username": { "type": "string", "minLength": 3 },
+                  "displayName": { "type": "string" },
+                  "clientId": { "type": "string", "description": "Identifies the client application. Use 'ics342-android-v1'." },
+                  "clientSecret": { "type": "string", "description": "Client secret. Provided at course start." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created. Call POST /tokens with grantType=password to obtain tokens.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserProfile" }
+              }
+            }
+          },
+          "409": {
+            "description": "Email or username is already taken.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/tokens": {
+      "post": {
+        "summary": "Obtain or refresh access tokens",
+        "description": "Token endpoint. Use grantType to select the flow.\n\n**Password grant** — exchange email and password for tokens:\n```json\n{\n  \"grantType\": \"password\",\n  \"email\": \"user@example.com\",\n  \"password\": \"secret\",\n  \"clientId\": \"ics342-android-v1\",\n  \"clientSecret\": \"<provided at course start>\"\n}\n```\n\n**Refresh token grant** — exchange a refresh token for a new access token:\n```json\n{\n  \"grantType\": \"refreshToken\",\n  \"refreshToken\": \"<stored refresh token>\",\n  \"clientId\": \"ics342-android-v1\",\n  \"clientSecret\": \"<provided at course start>\"\n}\n```",
+        "tags": ["Authentication"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  { "$ref": "#/components/schemas/PasswordGrant" },
+                  { "$ref": "#/components/schemas/RefreshTokenGrant" }
+                ],
+                "discriminator": {
+                  "propertyName": "grantType",
+                  "mapping": {
+                    "password": "#/components/schemas/PasswordGrant",
+                    "refreshToken": "#/components/schemas/RefreshTokenGrant"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens issued",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } }
+          },
+          "401": {
+            "description": "Invalid credentials, expired refresh token, or invalid client credentials.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/media": {
+      "get": {
+        "summary": "Search and list media",
+        "description": "Returns a paginated array of media items. Supports filtering by type, genre, and full-text search. Sorted by id ascending for stable cursor pagination. With 500+ items in the catalog, pagination is required — do not assume all results fit on one page.",
+        "tags": ["Media"],
+        "parameters": [
+          { "name": "query", "in": "query", "description": "Search query for title, author, or director", "schema": { "type": "string" } },
+          { "name": "type", "in": "query", "description": "Filter by media type", "schema": { "type": "string", "enum": ["book", "movie", "show"] } },
+          { "name": "genre", "in": "query", "description": "Filter by genre", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "minimum": 1, "maximum": 100 } },
+          { "name": "after", "in": "query", "description": "Cursor for the next page. Pass the X-Next-Cursor header value from the previous response.", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of media items",
+            "headers": {
+              "X-Next-Cursor": { "$ref": "#/components/headers/X-Next-Cursor" },
+              "X-Has-More": { "$ref": "#/components/headers/X-Has-More" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Media" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/{id}": {
+      "get": {
+        "summary": "Get media details",
+        "tags": ["Media"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Media details",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MediaDetail" } } }
+          },
+          "404": {
+            "description": "Media item not found.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "summary": "Get current user profile",
+        "tags": ["Users"],
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserProfile" } } }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update current user profile",
+        "tags": ["Users"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": { "type": "string" },
+                  "username": { "type": "string", "minLength": 3 },
+                  "bio": { "type": "string", "maxLength": 160 },
+                  "avatarUrl": { "type": "string", "format": "uri" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserProfile" } } }
+          },
+          "409": {
+            "description": "Username is already taken.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/users/search": {
+      "get": {
+        "summary": "Search for users",
+        "tags": ["Users"],
+        "parameters": [
+          { "name": "query", "in": "query", "description": "Search by username or display name", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "after", "in": "query", "description": "Cursor for the next page.", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of matching users",
+            "headers": {
+              "X-Next-Cursor": { "$ref": "#/components/headers/X-Next-Cursor" },
+              "X-Has-More": { "$ref": "#/components/headers/X-Has-More" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/UserProfile" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "summary": "Get user profile by ID",
+        "tags": ["Users"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserProfile" } } }
+          },
+          "404": {
+            "description": "User not found.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/users/{id}/followers": {
+      "get": {
+        "summary": "List a user's followers",
+        "tags": ["Social"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "after", "in": "query", "description": "Cursor for the next page.", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of users who follow this user",
+            "headers": {
+              "X-Next-Cursor": { "$ref": "#/components/headers/X-Next-Cursor" },
+              "X-Has-More": { "$ref": "#/components/headers/X-Has-More" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/UserProfile" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}/following": {
+      "get": {
+        "summary": "List users that a user follows",
+        "tags": ["Social"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "after", "in": "query", "description": "Cursor for the next page.", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of users this user follows",
+            "headers": {
+              "X-Next-Cursor": { "$ref": "#/components/headers/X-Next-Cursor" },
+              "X-Has-More": { "$ref": "#/components/headers/X-Has-More" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/UserProfile" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Follow a user",
+        "description": "The authenticated user begins following user {id}.",
+        "tags": ["Social"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "201": { "description": "Now following user" },
+          "400": { "description": "Cannot follow yourself.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "409": { "description": "Already following this user.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "summary": "Unfollow a user",
+        "description": "The authenticated user stops following user {id}.",
+        "tags": ["Social"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Unfollowed user" }
+        }
+      }
+    },
+    "/users/{id}/activity": {
+      "get": {
+        "summary": "Get a user's public activity",
+        "description": "Returns recent public activity for any user. Used on the User Profile screen. Sorted by createdAt descending (newest first).",
+        "tags": ["Social"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } },
+          { "name": "after", "in": "query", "description": "Cursor for the next page.", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of public activity items",
+            "headers": {
+              "X-Next-Cursor": { "$ref": "#/components/headers/X-Next-Cursor" },
+              "X-Has-More": { "$ref": "#/components/headers/X-Has-More" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Activity" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}/library": {
+      "get": {
+        "summary": "Get a user's library",
+        "description": "Returns the public library of any user. Used on the User Profile screen. Sorted by addedAt descending.",
+        "tags": ["Users"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["want_to", "in_progress", "finished"] } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "after", "in": "query", "description": "Cursor for the next page.", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of library items",
+            "headers": {
+              "X-Next-Cursor": { "$ref": "#/components/headers/X-Next-Cursor" },
+              "X-Has-More": { "$ref": "#/components/headers/X-Has-More" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/LibraryItem" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/library": {
+      "get": {
+        "summary": "Get my library",
+        "description": "Returns the authenticated user's library. Sorted by addedAt descending.",
+        "tags": ["Library"],
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["want_to", "in_progress", "finished"] } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "after", "in": "query", "description": "Cursor for the next page.", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of library items",
+            "headers": {
+              "X-Next-Cursor": { "$ref": "#/components/headers/X-Next-Cursor" },
+              "X-Has-More": { "$ref": "#/components/headers/X-Has-More" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/LibraryItem" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add media to library",
+        "tags": ["Library"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["mediaId", "status"],
+                "properties": {
+                  "mediaId": { "type": "integer" },
+                  "status": { "type": "string", "enum": ["want_to", "in_progress", "finished"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Added to library",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LibraryItem" } } }
+          },
+          "409": {
+            "description": "This media item is already in the library.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/library/{mediaId}": {
+      "get": {
+        "summary": "Get a single library item",
+        "description": "Returns the authenticated user's library entry for this media item. Use this on the Media Detail screen to check whether the item is in the library and what its status is. Returns 404 if the item is not in the library.",
+        "tags": ["Library"],
+        "parameters": [
+          { "name": "mediaId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Library item found",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LibraryItem" } } }
+          },
+          "404": { "description": "This media item is not in the user's library." }
+        }
+      },
+      "put": {
+        "summary": "Update library item status",
+        "tags": ["Library"],
+        "parameters": [
+          { "name": "mediaId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["want_to", "in_progress", "finished"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LibraryItem" } } }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove from library",
+        "tags": ["Library"],
+        "parameters": [
+          { "name": "mediaId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "Removed from library" }
+        }
+      }
+    },
+    "/reviews": {
+      "get": {
+        "summary": "Get reviews",
+        "description": "Returns reviews filtered by mediaId or userId. Sorted by createdAt descending.",
+        "tags": ["Reviews"],
+        "parameters": [
+          { "name": "mediaId", "in": "query", "description": "Filter by media ID — use this to load reviews on the Media Detail screen", "schema": { "type": "integer" } },
+          { "name": "userId", "in": "query", "description": "Filter by user ID", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "after", "in": "query", "description": "Cursor for the next page.", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of reviews",
+            "headers": {
+              "X-Next-Cursor": { "$ref": "#/components/headers/X-Next-Cursor" },
+              "X-Has-More": { "$ref": "#/components/headers/X-Has-More" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Review" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a review",
+        "description": "One review per user per media item. Returns 409 if the user has already reviewed this media.",
+        "tags": ["Reviews"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["mediaId", "rating"],
+                "properties": {
+                  "mediaId": { "type": "integer" },
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "reviewText": { "type": "string", "maxLength": 500 },
+                  "shareToFeed": { "type": "boolean", "default": true, "description": "Post this review to the activity feed" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Review" } } }
+          },
+          "409": {
+            "description": "User has already reviewed this media item.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/reviews/{id}": {
+      "put": {
+        "summary": "Update a review",
+        "tags": ["Reviews"],
+        "parameters": [
+          { "name": "id", "in": "path", "description": "Review ID (from the Review object's `id` field)", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "reviewText": { "type": "string", "maxLength": 500 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Review updated",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Review" } } }
+          },
+          "403": { "description": "You can only edit your own reviews.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Review not found.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "summary": "Delete a review",
+        "tags": ["Reviews"],
+        "parameters": [
+          { "name": "id", "in": "path", "description": "Review ID (from the Review object's `id` field)", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "Review deleted" },
+          "403": { "description": "You can only delete your own reviews.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/activity": {
+      "get": {
+        "summary": "Get activity feed",
+        "description": "Returns recent activity from users the authenticated user follows. Sorted by createdAt descending (newest first).",
+        "tags": ["Social"],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "after", "in": "query", "description": "Cursor for the next page.", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of activity items",
+            "headers": {
+              "X-Next-Cursor": { "$ref": "#/components/headers/X-Next-Cursor" },
+              "X-Has-More": { "$ref": "#/components/headers/X-Has-More" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Activity" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/goals": {
+      "get": {
+        "summary": "Get tracking goals",
+        "description": "Returns all goals for the authenticated user. Not paginated — a user can have at most one goal per year per media type.",
+        "tags": ["Goals"],
+        "parameters": [
+          { "name": "year", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of goals",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Goal" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a tracking goal",
+        "tags": ["Goals"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["year", "targetCount"],
+                "properties": {
+                  "year": { "type": "integer" },
+                  "targetCount": { "type": "integer", "minimum": 1 },
+                  "mediaType": { "type": "string", "enum": ["book", "movie", "show", "all"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Goal created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Goal" } } }
+          },
+          "409": {
+            "description": "A goal for this year and media type already exists.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/quotes": {
+      "get": {
+        "summary": "Get quotes",
+        "description": "Returns the authenticated user's quotes, plus public quotes from all users when public=true. Sorted by createdAt descending.",
+        "tags": ["Quotes"],
+        "parameters": [
+          { "name": "public", "in": "query", "description": "Return only public quotes from all users", "schema": { "type": "boolean", "default": false } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "after", "in": "query", "description": "Cursor for the next page.", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of quotes",
+            "headers": {
+              "X-Next-Cursor": { "$ref": "#/components/headers/X-Next-Cursor" },
+              "X-Has-More": { "$ref": "#/components/headers/X-Has-More" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Quote" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a quote",
+        "tags": ["Quotes"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["mediaId", "quoteText"],
+                "properties": {
+                  "mediaId": { "type": "integer" },
+                  "quoteText": { "type": "string", "maxLength": 500 },
+                  "pageNumber": { "type": "integer" },
+                  "isPublic": { "type": "boolean", "default": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Quote created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Quote" } } }
+          }
+        }
+      }
+    },
+    "/quotes/{id}": {
+      "put": {
+        "summary": "Update a quote",
+        "tags": ["Quotes"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quoteText": { "type": "string", "maxLength": 500 },
+                  "isPublic": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Quote updated",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Quote" } } }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a quote",
+        "tags": ["Quotes"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "Quote deleted" }
+        }
+      }
+    },
+    "/quotes/{id}/likes": {
+      "post": {
+        "summary": "Like a quote",
+        "tags": ["Quotes"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "201": { "description": "Quote liked" },
+          "409": { "description": "Already liked this quote.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "summary": "Unlike a quote",
+        "tags": ["Quotes"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "Quote unliked" }
+        }
+      }
+    },
+    "/priorities": {
+      "get": {
+        "summary": "Get want-to priorities",
+        "description": "Returns the user's priority list. Not paginated — maximum 5 items.",
+        "tags": ["Priorities"],
+        "responses": {
+          "200": {
+            "description": "Array of priority items",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Priority" } }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update priority order",
+        "tags": ["Priorities"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["mediaId"],
+                "properties": {
+                  "mediaId": { "type": "integer" },
+                  "priority": { "type": "integer", "minimum": 1, "maximum": 3 },
+                  "orderIndex": { "type": "integer" },
+                  "estimatedTimeHours": { "type": "integer" },
+                  "notes": { "type": "string", "maxLength": 200 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Priority updated",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Priority" } } }
+          },
+          "400": {
+            "description": "Maximum 5 priority items allowed.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "headers": {
+      "X-Next-Cursor": {
+        "description": "Cursor for the next page. Pass as the `after` query parameter on the next request. Absent when X-Has-More is false.",
+        "schema": { "type": "string" }
+      },
+      "X-Has-More": {
+        "description": "Whether more pages exist. Always present on paginated responses.",
+        "schema": { "type": "string", "enum": ["true", "false"] }
+      }
+    },
+    "schemas": {
+      "PasswordGrant": {
+        "type": "object",
+        "required": ["grantType", "email", "password", "clientId", "clientSecret"],
+        "properties": {
+          "grantType": { "type": "string", "enum": ["password"] },
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" },
+          "clientId": { "type": "string", "description": "Use 'ics342-android-v1'" },
+          "clientSecret": { "type": "string", "description": "Provided at course start" }
+        }
+      },
+      "RefreshTokenGrant": {
+        "type": "object",
+        "required": ["grantType", "refreshToken", "clientId", "clientSecret"],
+        "properties": {
+          "grantType": { "type": "string", "enum": ["refreshToken"] },
+          "refreshToken": { "type": "string" },
+          "clientId": { "type": "string", "description": "Use 'ics342-android-v1'" },
+          "clientSecret": { "type": "string", "description": "Provided at course start" }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/UserProfile" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "bio": { "type": "string" },
+          "avatarUrl": { "type": "string" },
+          "followerCount": { "type": "integer" },
+          "followingCount": { "type": "integer" },
+          "trackedCount": { "type": "integer", "description": "Total items in this user's library" },
+          "isFollowing": { "type": "boolean", "description": "Whether the authenticated user follows this user. Omitted on /users/me." },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Media": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "mediaType": { "type": "string", "enum": ["book", "movie", "show"] },
+          "title": { "type": "string" },
+          "author": { "type": "string", "description": "Books only" },
+          "director": { "type": "string", "description": "Movies only" },
+          "creator": { "type": "string", "description": "Shows only" },
+          "network": { "type": "string", "description": "Shows only" },
+          "coverUrl": { "type": "string", "description": "Supabase Storage public URL. Always loads from the course backend." },
+          "publishedYear": { "type": "integer" },
+          "averageRating": { "type": "number" },
+          "ratingCount": { "type": "integer" },
+          "genres": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "MediaDetail": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Media" },
+          {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "pageCount": { "type": "integer", "description": "Books only" },
+              "runtimeMinutes": { "type": "integer", "description": "Movies only" },
+              "seasonCount": { "type": "integer", "description": "Shows only" },
+              "episodeCount": { "type": "integer", "description": "Shows only" },
+              "isbn": { "type": "string", "description": "Books only" },
+              "reviewCount": { "type": "integer" }
+            }
+          }
+        ]
+      },
+      "LibraryItem": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string", "format": "uuid" },
+          "mediaId": { "type": "integer" },
+          "status": { "type": "string", "enum": ["want_to", "in_progress", "finished"] },
+          "addedAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "media": { "$ref": "#/components/schemas/Media" }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Unique identifier. Use this when calling PUT /reviews/{id} or DELETE /reviews/{id}." },
+          "userId": { "type": "string", "format": "uuid" },
+          "mediaId": { "type": "integer" },
+          "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "reviewText": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "user": { "$ref": "#/components/schemas/UserProfile" },
+          "media": { "$ref": "#/components/schemas/Media" }
+        }
+      },
+      "Activity": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "userId": { "type": "string", "format": "uuid" },
+          "activityType": { "type": "string", "enum": ["review", "added", "finished", "started"] },
+          "mediaId": { "type": "integer" },
+          "rating": { "type": "integer", "minimum": 1, "maximum": 5, "description": "Present when activityType is 'review'" },
+          "reviewText": { "type": "string", "description": "Present when activityType is 'review' and reviewer wrote text" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "user": { "$ref": "#/components/schemas/UserProfile" },
+          "media": { "$ref": "#/components/schemas/Media" }
+        }
+      },
+      "Goal": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "userId": { "type": "string", "format": "uuid" },
+          "year": { "type": "integer" },
+          "targetCount": { "type": "integer" },
+          "currentCount": { "type": "integer", "description": "Computed live: finished items matching this goal's mediaType in this year." },
+          "mediaType": { "type": "string", "enum": ["book", "movie", "show", "all"] }
+        }
+      },
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "userId": { "type": "string", "format": "uuid" },
+          "mediaId": { "type": "integer" },
+          "quoteText": { "type": "string" },
+          "pageNumber": { "type": "integer" },
+          "isPublic": { "type": "boolean" },
+          "likeCount": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "media": { "$ref": "#/components/schemas/Media" }
+        }
+      },
+      "Priority": {
+        "type": "object",
+        "properties": {
+          "mediaId": { "type": "integer" },
+          "priority": { "type": "integer" },
+          "orderIndex": { "type": "integer" },
+          "estimatedTimeHours": { "type": "integer" },
+          "notes": { "type": "string" },
+          "media": { "$ref": "#/components/schemas/Media" }
+        }
+      }
+    }
+  }
+}

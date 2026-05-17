@@ -1,0 +1,59 @@
+[tools]
+node = "22"
+supabase = "latest"
+
+[tasks.start]
+description = "Start the local Supabase stack (Postgres, Auth, Storage, Edge Runtime, Studio)"
+run = "supabase start"
+
+[tasks.stop]
+description = "Stop the local Supabase stack"
+run = "supabase stop"
+
+[tasks.status]
+description = "Show status of local Supabase services"
+run = "supabase status"
+
+[tasks.db-reset]
+description = "Wipe the local database and re-run all migrations from scratch"
+run = "supabase db reset"
+
+[tasks.db-migrate]
+description = "Apply pending migrations to the local database"
+run = "supabase migration up --local"
+
+[tasks.functions-serve]
+description = "Serve all edge functions locally with hot reload"
+run = "supabase functions serve --env-file supabase/.env.local"
+
+[tasks.seed]
+description = "Run the media seed script (requires TMDB_API_KEY and GOOGLE_BOOKS_API_KEY in backend/scripts/.env)"
+run = "tsx backend/scripts/seed.ts"
+
+[tasks.lint]
+description = "Lint backend scripts with ESLint"
+run = "eslint backend/"
+
+[tasks.format]
+description = "Format all files with Prettier"
+run = "prettier --write ."
+
+[tasks.format-check]
+description = "Check formatting without writing"
+run = "prettier --check ."
+
+[tasks.typecheck]
+description = "Type-check backend scripts (Deno functions use deno check)"
+run = "tsc --project backend/tsconfig.json --noEmit"
+
+[tasks.deno-check]
+description = "Type-check all Supabase edge functions"
+run = "deno check supabase/functions/**/*.ts"
+
+[tasks.deno-lint]
+description = "Lint all Supabase edge functions"
+run = "deno lint supabase/functions/"
+
+[tasks.deno-format]
+description = "Format all Supabase edge functions with deno fmt"
+run = "deno fmt supabase/functions/"

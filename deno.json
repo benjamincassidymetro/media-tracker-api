@@ -1,0 +1,22 @@
+{
+  "lock": false,
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2",
+    "bcryptjs": "npm:bcryptjs@^2.4.3",
+    "jose": "npm:jose@^5"
+  },
+  "lint": {
+    "include": ["supabase/functions/"],
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": ["no-explicit-any"]
+    }
+  },
+  "fmt": {
+    "include": ["supabase/functions/"],
+    "indentWidth": 2,
+    "singleQuote": true,
+    "lineWidth": 100,
+    "semiColons": false
+  }
+}
