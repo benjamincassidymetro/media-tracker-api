@@ -1,0 +1,409 @@
+# Media Tracker API — REST Client
+# Requires VS Code extension: humao.rest-client
+#
+# Quick start:
+#   1. Run "Login" below (Ctrl+click Send Request)
+#   2. Copy accessToken from the response, paste into @accessToken below
+#   3. Run any other request — they all use {{accessToken}}
+#
+# Alternatively: named request capture works automatically within a session.
+# Use {{login.response.body.accessToken}} instead of the static variable.
+
+@localUrl  = http://localhost:54321/functions/v1
+@remoteUrl = https://<project-ref>.supabase.co/functions/v1
+
+# Switch between local and remote by changing this line:
+@baseUrl = {{localUrl}}
+
+@clientId     = ics342-android-v1
+@clientSecret = mt-android-s26-xK9pQ2
+
+# Paste your access token here after logging in:
+@accessToken  = PASTE_ACCESS_TOKEN_HERE
+@refreshToken = PASTE_REFRESH_TOKEN_HERE
+
+# IDs to fill in for specific requests:
+@mediaId  = 1
+@userId   = PASTE_USER_UUID_HERE
+@reviewId = 1
+@quoteId  = 1
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTH
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Register — POST /users
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "password": "Testing123!",
+  "username": "newuser",
+  "displayName": "New User",
+  "clientId": "{{clientId}}",
+  "clientSecret": "{{clientSecret}}"
+}
+
+###
+
+### Login — POST /tokens (password grant)
+# @name login
+POST {{baseUrl}}/tokens
+Content-Type: application/json
+
+{
+  "grantType": "password",
+  "email": "alice@mediatracker.dev",
+  "password": "Testing123!",
+  "clientId": "{{clientId}}",
+  "clientSecret": "{{clientSecret}}"
+}
+
+###
+
+### Refresh token — POST /tokens (refresh grant)
+# @name refresh
+POST {{baseUrl}}/tokens
+Content-Type: application/json
+
+{
+  "grantType": "refreshToken",
+  "refreshToken": "{{refreshToken}}",
+  "clientId": "{{clientId}}",
+  "clientSecret": "{{clientSecret}}"
+}
+
+###
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Get own profile — GET /users/me
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Update own profile — PUT /users/me
+PUT {{baseUrl}}/users/me
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "displayName": "Alice Updated",
+  "bio": "I love books and movies."
+}
+
+###
+
+### Search users — GET /users/search
+GET {{baseUrl}}/users/search?query=alice
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Get user by ID — GET /users/{id}
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Follow user — POST /users/{id}/following
+POST {{baseUrl}}/users/{{userId}}/following
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Unfollow user — DELETE /users/{id}/following
+DELETE {{baseUrl}}/users/{{userId}}/following
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Get user followers — GET /users/{id}/followers
+GET {{baseUrl}}/users/{{userId}}/followers
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Get user following — GET /users/{id}/following
+GET {{baseUrl}}/users/{{userId}}/following
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Get user activity — GET /users/{id}/activity
+GET {{baseUrl}}/users/{{userId}}/activity
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Get user library — GET /users/{id}/library
+GET {{baseUrl}}/users/{{userId}}/library
+Authorization: Bearer {{accessToken}}
+
+###
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MEDIA
+# ─────────────────────────────────────────────────────────────────────────────
+
+### List media — GET /media
+GET {{baseUrl}}/media
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Search media by title — GET /media?query=
+GET {{baseUrl}}/media?query=dune
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Filter by type — GET /media?type=book
+GET {{baseUrl}}/media?type=book
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Filter by genre — GET /media?genre=Science+Fiction
+GET {{baseUrl}}/media?genre=Science+Fiction
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Get media detail — GET /media/{id}
+GET {{baseUrl}}/media/{{mediaId}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LIBRARY
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Get library — GET /library
+GET {{baseUrl}}/library
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Get library filtered by status
+GET {{baseUrl}}/library?status=in_progress
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Add to library — POST /library
+POST {{baseUrl}}/library
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "mediaId": {{mediaId}},
+  "status": "want_to"
+}
+
+###
+
+### Get single library item — GET /library/{mediaId}
+GET {{baseUrl}}/library/{{mediaId}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Update library status — PUT /library/{mediaId}
+PUT {{baseUrl}}/library/{{mediaId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "status": "in_progress"
+}
+
+###
+
+### Remove from library — DELETE /library/{mediaId}
+DELETE {{baseUrl}}/library/{{mediaId}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REVIEWS
+# ─────────────────────────────────────────────────────────────────────────────
+
+### List reviews for a media item — GET /reviews?mediaId=
+GET {{baseUrl}}/reviews?mediaId={{mediaId}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+### List reviews by user — GET /reviews?userId=
+GET {{baseUrl}}/reviews?userId={{userId}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Create review — POST /reviews
+POST {{baseUrl}}/reviews
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "mediaId": {{mediaId}},
+  "rating": 4,
+  "reviewText": "Really enjoyed this one.",
+  "shareToFeed": true
+}
+
+###
+
+### Update review — PUT /reviews/{id}
+PUT {{baseUrl}}/reviews/{{reviewId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "reviewText": "On reflection, a masterpiece."
+}
+
+###
+
+### Delete review — DELETE /reviews/{id}
+DELETE {{baseUrl}}/reviews/{{reviewId}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ACTIVITY
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Get activity feed — GET /activity
+GET {{baseUrl}}/activity
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Next page of activity (replace cursor value)
+GET {{baseUrl}}/activity?after=CURSOR_VALUE_HERE
+Authorization: Bearer {{accessToken}}
+
+###
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GOALS
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Get goals — GET /goals
+GET {{baseUrl}}/goals
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Get goals for a specific year
+GET {{baseUrl}}/goals?year=2026
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Create goal — POST /goals
+POST {{baseUrl}}/goals
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "year": 2026,
+  "mediaType": "book",
+  "targetCount": 24
+}
+
+###
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QUOTES
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Get own quotes — GET /quotes
+GET {{baseUrl}}/quotes
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Get all public quotes — GET /quotes?public=true
+GET {{baseUrl}}/quotes?public=true
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Create quote — POST /quotes
+POST {{baseUrl}}/quotes
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "mediaId": {{mediaId}},
+  "quoteText": "It is impossible to live without failing at something.",
+  "pageNumber": 42,
+  "isPublic": true
+}
+
+###
+
+### Update quote — PUT /quotes/{id}
+PUT {{baseUrl}}/quotes/{{quoteId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "isPublic": false
+}
+
+###
+
+### Delete quote — DELETE /quotes/{id}
+DELETE {{baseUrl}}/quotes/{{quoteId}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Like a quote — POST /quotes/{id}/likes
+POST {{baseUrl}}/quotes/{{quoteId}}/likes
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Unlike a quote — DELETE /quotes/{id}/likes
+DELETE {{baseUrl}}/quotes/{{quoteId}}/likes
+Authorization: Bearer {{accessToken}}
+
+###
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PRIORITIES
+# ─────────────────────────────────────────────────────────────────────────────
+
+### Get priorities — GET /priorities
+GET {{baseUrl}}/priorities
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Upsert priority — PUT /priorities
+PUT {{baseUrl}}/priorities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "mediaId": {{mediaId}},
+  "priority": 1,
+  "orderIndex": 0,
+  "estimatedTimeHours": 10,
+  "notes": "Start this weekend."
+}
+
+###
