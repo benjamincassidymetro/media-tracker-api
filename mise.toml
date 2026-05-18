@@ -59,6 +59,10 @@ supabase functions serve --env-file supabase/.env.local
 description = "Run the media seed script (set TMDB_API_KEY and GOOGLE_BOOKS_API_KEY in mise.local.toml)"
 run = "npx tsx backend/scripts/seed.ts"
 
+[tasks."provision-clients"]
+description = "Provision per-student OAuth clients (--students file.txt | --count N)"
+run = "npx tsx backend/scripts/provision-clients.ts"
+
 [tasks.lint]
 description = "Lint backend scripts with ESLint"
 run = "eslint backend/"
