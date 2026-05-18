@@ -63,6 +63,14 @@ run = "npx tsx backend/scripts/seed.ts"
 description = "Provision per-student OAuth clients (--students file.txt | --count N)"
 run = "npx tsx backend/scripts/provision-clients.ts"
 
+[tasks.test]
+description = "Run E2E tests against the local Supabase stack (requires: mise run start && mise run db:reset)"
+run = "npm test"
+
+[tasks."test:watch"]
+description = "Run E2E tests in watch mode"
+run = "npm run test:watch"
+
 [tasks.lint]
 description = "Lint backend scripts with ESLint"
 run = "eslint backend/"
