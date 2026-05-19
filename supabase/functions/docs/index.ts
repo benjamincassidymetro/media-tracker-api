@@ -18,7 +18,7 @@ function redocPage(): string {
   <style>
     body { margin: 0; padding: 0; }
     /* Supabase-ish accent colour */
-    .menu-content { background: #1c1c1c !important; }
+    
   </style>
 </head>
 <body>
@@ -27,7 +27,7 @@ function redocPage(): string {
   <script>
     Redoc.init(
       ${JSON.stringify(spec)},
-      { hideDownloadButton: false, theme: { colors: { primary: { main: '#3ecf8e' } } } },
+      { hideDownloadButton: false },
       document.getElementById('redoc')
     );
   </script>

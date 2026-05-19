@@ -124,7 +124,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         return errorResponse(500, 'Something went wrong. Please try again.')
       }
 
-      return new Response(null, { status: 201 })
+      return new Response(null, { status: 204 })
     }
 
     // DELETE /quotes/{id}/likes

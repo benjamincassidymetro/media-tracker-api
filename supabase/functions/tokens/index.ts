@@ -4,18 +4,11 @@ import * as jose from 'npm:jose@^5'
 import { corsResponse } from '../_shared/cors.ts'
 import { db } from '../_shared/db.ts'
 import { errorResponse, jsonResponse } from '../_shared/response.ts'
+import { jwtSecret as JWT_SECRET } from '../_shared/secrets.ts'
 import { formatUser, type DbUser } from '../_shared/types.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const JWT_SECRET = Deno.env.get('SUPABASE_JWT_SECRET') ?? Deno.env.get('EDGE_JWT_SECRET')
-
-console.log('[tokens] init — env check:', {
-  hasUrl: !!SUPABASE_URL,
-  hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY,
-  hasJwtSecret: !!JWT_SECRET,
-  envKeys: Object.keys(Deno.env.toObject()),
-})
 
 async function validateClientCredentials(clientId: string, clientSecret: string): Promise<boolean> {
   const { data } = await db
