@@ -340,7 +340,7 @@ async function handleFollow(targetId: string, authUserId: string): Promise<Respo
     return errorResponse(500, 'Something went wrong. Please try again.')
   }
 
-  return new Response(null, { status: 201 })
+  return new Response(null, { status: 204 })
 }
 
 async function handleUnfollow(targetId: string, authUserId: string): Promise<Response> {

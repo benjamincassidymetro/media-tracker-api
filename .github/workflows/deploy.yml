@@ -33,7 +33,24 @@ jobs:
         run: supabase start
 
       - name: Apply migrations and seed data
+        # db reset wipes + reapplies migrations + runs seed.sql, then restarts containers
         run: supabase db reset --local
+
+      - name: Wait for Edge Runtime to be ready
+        # After container restart, poll until the functions endpoint responds
+        # (any HTTP code other than 000 means the server is up)
+        run: |
+          echo "Waiting for Edge Runtime..."
+          for i in $(seq 1 40); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:54321/functions/v1/ || true)
+            if [ "$code" != "000" ]; then
+              echo "Edge Runtime ready (HTTP $code)"
+              exit 0
+            fi
+            echo "  attempt $i/40 — not ready yet"
+            sleep 3
+          done
+          echo "ERROR: Edge Runtime did not become ready in time" && exit 1
 
       - name: Run E2E tests
         run: npm test
@@ -42,6 +59,9 @@ jobs:
           SUPABASE_URL: http://127.0.0.1:54321
           # Local dev service role key — safe to commit, not a real secret
           SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0
+          # Fallback for JWT secret — the built-in Edge Runtime injects SUPABASE_JWT_SECRET
+          # automatically, but this ensures auth.ts and tokens/index.ts always find it
+          EDGE_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
 
       - name: Stop local Supabase stack
         if: always()
