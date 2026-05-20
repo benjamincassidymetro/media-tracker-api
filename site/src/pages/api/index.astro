@@ -1,0 +1,37 @@
+---
+import Layout from '../../layouts/Layout.astro'
+const specUrl = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}api-spec.json`
+---
+
+<Layout title="API Reference — ICS342">
+  <div id="redoc-container"></div>
+</Layout>
+
+<script is:inline define:vars={{ specUrl }}>
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/redoc/bundles/redoc.standalone.js'
+  script.onload = () => {
+    // @ts-ignore
+    Redoc.init(
+      specUrl,
+      {
+        hideDownloadButton: false,
+        scrollYOffset: 56,
+        theme: {
+          colors: { primary: { main: '#3DDC84' } },
+          typography: {
+            fontFamily: 'Inter, system-ui, sans-serif',
+            code: { fontFamily: 'JetBrains Mono, monospace' },
+          },
+          sidebar: {
+            backgroundColor: '#0f172a',
+            textColor: '#cbd5e1',
+          },
+          rightPanel: { backgroundColor: '#1e293b' },
+        },
+      },
+      document.getElementById('redoc-container'),
+    )
+  }
+  document.head.appendChild(script)
+</script>

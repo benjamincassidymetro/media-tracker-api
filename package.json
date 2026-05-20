@@ -7,23 +7,21 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@eslint/js": "^9",
-    "@types/bcryptjs": "^2",
-    "@types/node": "^22",
-    "@types/sharp": "^0.32",
-    "eslint": "^9",
-    "eslint-config-prettier": "^10",
-    "eslint-plugin-perfectionist": "^4",
-    "prettier": "^3",
-    "tsx": "^4",
-    "typescript": "^5",
-    "typescript-eslint": "^8",
-    "vitest": "^4.1.6"
+    "@eslint/js": "10.0.1",
+    "@types/node": "25.9.0",
+    "eslint": "10.4.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-perfectionist": "5.9.0",
+    "prettier": "3.8.3",
+    "tsx": "4.22.3",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.59.4",
+    "vitest": "4.1.6"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2",
-    "bcryptjs": "^2.4.3",
-    "dotenv": "^16",
-    "sharp": "^0.33"
+    "@supabase/supabase-js": "2.106.0",
+    "bcryptjs": "3.0.3",
+    "dotenv": "17.4.2",
+    "sharp": "0.34.5"
   }
 }

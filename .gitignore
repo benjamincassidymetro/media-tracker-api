@@ -24,5 +24,10 @@ supabase/.temp/
 # Claude Code local settings (user-specific)
 .claude/settings.local.json
 
+# Astro site build output and assets copied from docs/ at build time
+site/dist/
+site/public/api-spec.json
+site/public/wireframes.html
+
 # macOS
 .DS_Store
