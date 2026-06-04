@@ -1,5 +1,3 @@
-import bcryptjs from 'npm:bcryptjs@^2'
-
 import { db } from './db.ts'
 import { errorResponse } from './response.ts'
 
@@ -23,13 +21,9 @@ export async function validateClientCredentials(
     return { ok: false, response: errorResponse(401, 'Invalid client credentials.') }
   }
 
-  const hash = data.client_secret_hash as string
-  const match = await bcryptjs.compare(clientSecret, hash)
-  console.log(`[${tag}] secret compare`, { clientId, match, hashPrefix: hash.slice(0, 7) })
+  const match = clientSecret === (data.client_secret_hash as string)
+  console.log(`[${tag}] compare`, { clientId, match })
 
-  if (!match) {
-    return { ok: false, response: errorResponse(401, 'Invalid client credentials.') }
-  }
-
+  if (!match) return { ok: false, response: errorResponse(401, 'Invalid client credentials.') }
   return { ok: true }
 }

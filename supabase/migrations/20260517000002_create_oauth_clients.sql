@@ -7,4 +7,7 @@ CREATE TABLE oauth_clients (
 
 ALTER TABLE oauth_clients ENABLE ROW LEVEL SECURITY;
 
--- No policies — service role only. Authenticated users cannot read or write this table.
+-- No policies — Edge Functions access this table via service role (bypasses RLS).
+-- The GRANTs below make the table visible to PostgREST's schema cache; RLS
+-- prevents anon/authenticated from actually reading any rows.
+GRANT SELECT ON TABLE public.oauth_clients TO service_role, authenticated, anon;
