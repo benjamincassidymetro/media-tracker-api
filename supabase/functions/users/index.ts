@@ -1,6 +1,5 @@
-import bcryptjs from 'npm:bcryptjs@^2'
-
 import { handleAuthError, requireAuth } from '../_shared/auth.ts'
+import { validateClientCredentials } from '../_shared/client-auth.ts'
 import { corsResponse } from '../_shared/cors.ts'
 import { db } from '../_shared/db.ts'
 import { decodeCursor, errorResponse, jsonResponse, paginatedResponse } from '../_shared/response.ts'
@@ -85,15 +84,8 @@ async function handleCreateUser(req: Request): Promise<Response> {
     return errorResponse(400, 'email, password, username, displayName, clientId, and clientSecret are required.')
   }
 
-  // Validate client credentials
-  const { data: client } = await db
-    .from('oauth_clients')
-    .select('client_secret_hash')
-    .eq('client_id', clientId)
-    .single()
-  if (!client) return errorResponse(401, 'Invalid client credentials.')
-  const clientValid = await bcryptjs.compare(clientSecret, client.client_secret_hash as string)
-  if (!clientValid) return errorResponse(401, 'Invalid client credentials.')
+  const clientAuth = await validateClientCredentials(clientId, clientSecret, 'users')
+  if (!clientAuth.ok) return clientAuth.response
 
   // Create auth user
   const { data: authData, error: authError } = await db.auth.admin.createUser({

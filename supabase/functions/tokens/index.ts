@@ -1,6 +1,6 @@
-import bcryptjs from 'npm:bcryptjs@^2'
 import * as jose from 'npm:jose@^5'
 
+import { validateClientCredentials } from '../_shared/client-auth.ts'
 import { corsResponse } from '../_shared/cors.ts'
 import { db } from '../_shared/db.ts'
 import { errorResponse, jsonResponse } from '../_shared/response.ts'
@@ -10,15 +10,6 @@ import { formatUser, type DbUser } from '../_shared/types.ts'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-async function validateClientCredentials(clientId: string, clientSecret: string): Promise<boolean> {
-  const { data } = await db
-    .from('oauth_clients')
-    .select('client_secret_hash')
-    .eq('client_id', clientId)
-    .single()
-  if (!data) return false
-  return bcryptjs.compare(clientSecret, data.client_secret_hash as string)
-}
 
 async function issueAccessToken(userId: string, email: string): Promise<string> {
   const secret = new TextEncoder().encode(JWT_SECRET)
@@ -92,8 +83,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!clientId || !clientSecret) {
     return errorResponse(401, 'Client credentials required.')
   }
-  const clientValid = await validateClientCredentials(clientId, clientSecret)
-  if (!clientValid) return errorResponse(401, 'Invalid client credentials.')
+  const clientAuth = await validateClientCredentials(clientId, clientSecret, 'tokens')
+  if (!clientAuth.ok) return clientAuth.response
 
   // -------------------------------------------------------------------------
   // Password grant
