@@ -26,7 +26,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (error) {
       console.error(error)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     return jsonResponse((data ?? []).map((r) => formatPriority(r as DbPriority)))
@@ -38,7 +38,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     try {
       body = await req.json()
     } catch {
-      return errorResponse(400, 'Invalid JSON body.')
+      return errorResponse(400, 'Invalid JSON.', 'INVALID_JSON')
     }
 
     const { mediaId, priority, orderIndex, estimatedTimeHours, notes } = body as {
@@ -49,7 +49,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       priority?: number
     }
 
-    if (!mediaId) return errorResponse(400, 'mediaId is required.')
+    if (!mediaId) return errorResponse(400, 'Missing required field: mediaId.', 'MISSING_FIELDS')
 
     // Check if this is a new item (not already in priorities)
     const { data: existing } = await db
@@ -68,13 +68,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       if (countError) {
         console.error(countError)
-        return errorResponse(500, 'Something went wrong. Please try again.')
+        return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
       }
 
       if ((count ?? 0) >= MAX_PRIORITIES) {
         return errorResponse(
           400,
           'You can have at most 5 priority items. Remove one before adding another.',
+          'MAX_PRIORITIES_EXCEEDED',
         )
       }
     }
@@ -97,11 +98,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (error) {
       console.error(error)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     return jsonResponse(formatPriority(data as DbPriority))
   }
 
-  return errorResponse(405, 'Method not allowed.')
+  return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
 })

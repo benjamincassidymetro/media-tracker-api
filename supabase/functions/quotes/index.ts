@@ -51,7 +51,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       const { data, error } = await qb
       if (error) {
         console.error(error)
-        return errorResponse(500, 'Something went wrong. Please try again.')
+        return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
       }
 
       const rows = (data ?? []) as DbQuote[]
@@ -71,7 +71,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       try {
         body = await req.json()
       } catch {
-        return errorResponse(400, 'Invalid JSON body.')
+        return errorResponse(400, 'Invalid JSON.', 'INVALID_JSON')
       }
 
       const { mediaId, quoteText, pageNumber, isPublic = false } = body as {
@@ -81,8 +81,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         quoteText?: string
       }
 
-      if (!mediaId || !quoteText) return errorResponse(400, 'mediaId and quoteText are required.')
-      if (quoteText.length > 500) return errorResponse(400, 'quoteText must be 500 characters or fewer.')
+      if (!mediaId || !quoteText) return errorResponse(400, 'Missing required fields: mediaId, quoteText.', 'MISSING_FIELDS')
+      if (quoteText.length > 500) return errorResponse(400, 'quoteText must be 500 characters or fewer.', 'INVALID_REQUEST')
 
       const { data, error } = await db
         .from('quotes')
@@ -98,17 +98,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       if (error) {
         console.error(error)
-        return errorResponse(500, 'Something went wrong. Please try again.')
+        return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
       }
 
       return jsonResponse(formatQuote(data as DbQuote), 201)
     }
 
-    return errorResponse(405, 'Method not allowed.')
+    return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
   }
 
   const quoteId = parseInt(segment, 10)
-  if (isNaN(quoteId)) return errorResponse(404, 'Not found.')
+  if (isNaN(quoteId)) return errorResponse(404, 'Not found.', 'NOT_FOUND')
 
   // /quotes/{id}/likes
   if (subResource === 'likes') {
@@ -119,9 +119,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
         .insert({ user_id: authUserId, quote_id: quoteId })
 
       if (error) {
-        if (error.code === '23505') return errorResponse(409, 'You have already liked this quote.')
+        if (error.code === '23505') return errorResponse(409, 'You have already liked this quote.', 'DUPLICATE_QUOTE_LIKE')
         console.error(error)
-        return errorResponse(500, 'Something went wrong. Please try again.')
+        return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
       }
 
       return new Response(null, { status: 204 })
@@ -137,7 +137,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return new Response(null, { status: 204 })
     }
 
-    return errorResponse(405, 'Method not allowed.')
+    return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
   }
 
   // PUT /quotes/{id}
@@ -148,22 +148,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq('id', quoteId)
       .single()
 
-    if (fetchError || !existing) return errorResponse(404, 'Quote not found.')
+    if (fetchError || !existing) return errorResponse(404, 'Quote not found.', 'QUOTE_NOT_FOUND')
     if ((existing.user_id as string) !== authUserId) {
-      return errorResponse(403, 'You can only edit your own quotes.')
+      return errorResponse(403, 'You can only edit your own quotes.', 'FORBIDDEN')
     }
 
     let body: Record<string, unknown>
     try {
       body = await req.json()
     } catch {
-      return errorResponse(400, 'Invalid JSON body.')
+      return errorResponse(400, 'Invalid JSON.', 'INVALID_JSON')
     }
 
     const { quoteText, isPublic } = body as { isPublic?: boolean; quoteText?: string }
     const updates: Record<string, unknown> = {}
     if (quoteText !== undefined) {
-      if (quoteText.length > 500) return errorResponse(400, 'quoteText must be 500 characters or fewer.')
+      if (quoteText.length > 500) return errorResponse(400, 'quoteText must be 500 characters or fewer.', 'INVALID_REQUEST')
       updates.quote_text = quoteText
     }
     if (isPublic !== undefined) updates.is_public = isPublic
@@ -177,7 +177,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (error) {
       console.error(error)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     return jsonResponse(formatQuote(data as DbQuote))
@@ -191,14 +191,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq('id', quoteId)
       .single()
 
-    if (fetchError || !existing) return errorResponse(404, 'Quote not found.')
+    if (fetchError || !existing) return errorResponse(404, 'Quote not found.', 'QUOTE_NOT_FOUND')
     if ((existing.user_id as string) !== authUserId) {
-      return errorResponse(403, 'You can only delete your own quotes.')
+      return errorResponse(403, 'You can only delete your own quotes.', 'FORBIDDEN')
     }
 
     await db.from('quotes').delete().eq('id', quoteId)
     return new Response(null, { status: 204 })
   }
 
-  return errorResponse(405, 'Method not allowed.')
+  return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
 })

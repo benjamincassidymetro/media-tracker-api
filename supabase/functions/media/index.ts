@@ -6,7 +6,7 @@ import { formatMedia, formatMediaDetail, type DbMedia } from '../_shared/types.t
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return corsResponse()
-  if (req.method !== 'GET') return errorResponse(405, 'Method not allowed.')
+  if (req.method !== 'GET') return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
 
   const url = new URL(req.url)
   const [segment] = url.pathname
@@ -23,10 +23,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // GET /media/{id}
   if (segment !== undefined) {
     const mediaId = parseInt(segment, 10)
-    if (isNaN(mediaId)) return errorResponse(404, 'Not found.')
+    if (isNaN(mediaId)) return errorResponse(404, 'Not found.', 'NOT_FOUND')
 
     const { data, error } = await db.from('media').select('*').eq('id', mediaId).single()
-    if (error || !data) return errorResponse(404, 'Media item not found.')
+    if (error || !data) return errorResponse(404, 'Media item not found.', 'MEDIA_NOT_FOUND')
 
     return jsonResponse(formatMediaDetail(data as DbMedia))
   }
@@ -61,7 +61,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const { data, error } = await qb
   if (error) {
     console.error(error)
-    return errorResponse(500, 'Something went wrong. Please try again.')
+    return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
   }
 
   const rows = (data ?? []) as DbMedia[]

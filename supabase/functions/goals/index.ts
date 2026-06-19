@@ -39,7 +39,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const { data: goals, error: goalsError } = await qb
     if (goalsError) {
       console.error(goalsError)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     // Fetch all finished library items for this user (used to compute current_count per goal)
@@ -51,7 +51,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (itemsError) {
       console.error(itemsError)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     const items = (finishedItems ?? []) as FinishedItem[]
@@ -66,7 +66,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     try {
       body = await req.json()
     } catch {
-      return errorResponse(400, 'Invalid JSON body.')
+      return errorResponse(400, 'Invalid JSON.', 'INVALID_JSON')
     }
 
     const { year, targetCount, mediaType = 'all' } = body as {
@@ -75,8 +75,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       year?: number
     }
 
-    if (!year || !targetCount) return errorResponse(400, 'year and targetCount are required.')
-    if (targetCount < 1) return errorResponse(400, 'targetCount must be at least 1.')
+    if (!year || !targetCount) return errorResponse(400, 'Missing required fields: year, targetCount.', 'MISSING_FIELDS')
+    if (targetCount < 1) return errorResponse(400, 'targetCount must be at least 1.', 'INVALID_REQUEST')
 
     const { data, error } = await db
       .from('goals')
@@ -86,14 +86,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (error) {
       if (error.code === '23505') {
-        return errorResponse(409, 'A goal for this year and media type already exists.')
+        return errorResponse(409, 'A goal for this year and media type already exists.', 'DUPLICATE_GOAL')
       }
       console.error(error)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     return jsonResponse(formatGoal(data as DbGoal, 0), 201)
   }
 
-  return errorResponse(405, 'Method not allowed.')
+  return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
 })

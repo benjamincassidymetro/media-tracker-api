@@ -68,7 +68,7 @@ async function handleCreateUser(req: Request): Promise<Response> {
   try {
     body = await req.json()
   } catch {
-    return errorResponse(400, 'Invalid JSON body.')
+    return errorResponse(400, 'Invalid JSON.', 'INVALID_JSON')
   }
 
   const { email, password, username, displayName, clientId, clientSecret } = body as {
@@ -81,7 +81,7 @@ async function handleCreateUser(req: Request): Promise<Response> {
   }
 
   if (!email || !password || !username || !displayName || !clientId || !clientSecret) {
-    return errorResponse(400, 'email, password, username, displayName, clientId, and clientSecret are required.')
+    return errorResponse(400, 'Missing required fields: email, password, username, displayName, clientId, clientSecret.', 'MISSING_FIELDS')
   }
 
   const clientAuth = await validateClientCredentials(clientId, clientSecret, 'users')
@@ -95,10 +95,10 @@ async function handleCreateUser(req: Request): Promise<Response> {
   })
   if (authError) {
     if (authError.message.includes('already')) {
-      return errorResponse(409, 'An account with this email already exists.')
+      return errorResponse(409, 'An account with this email already exists.', 'DUPLICATE_EMAIL')
     }
     console.error(authError)
-    return errorResponse(500, 'Something went wrong. Please try again.')
+    return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
   }
 
   const userId = authData.user.id
@@ -114,10 +114,13 @@ async function handleCreateUser(req: Request): Promise<Response> {
     // Roll back auth user to avoid orphaned auth records
     await db.auth.admin.deleteUser(userId)
     if (profileError.code === '23505') {
-      return errorResponse(409, 'This username or email is already taken.')
+      return errorResponse(409, 'This username is already taken.', 'DUPLICATE_USERNAME')
+    }
+    if (profileError.code === '23514') {
+      return errorResponse(400, 'Username must be at least 3 characters.', 'USERNAME_TOO_SHORT')
     }
     console.error(profileError)
-    return errorResponse(500, 'Something went wrong. Please try again.')
+    return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
   }
 
   return jsonResponse(formatUser(profile as DbUser), 201)
@@ -125,7 +128,7 @@ async function handleCreateUser(req: Request): Promise<Response> {
 
 async function handleGetMe(authUserId: string): Promise<Response> {
   const { data, error } = await db.from('users').select('*').eq('id', authUserId).single()
-  if (error || !data) return errorResponse(404, 'User not found.')
+  if (error || !data) return errorResponse(404, 'User not found.', 'USER_NOT_FOUND')
   // isFollowing intentionally omitted for own profile
   return jsonResponse(formatUser(data as DbUser))
 }
@@ -135,7 +138,7 @@ async function handleUpdateMe(req: Request, authUserId: string): Promise<Respons
   try {
     body = await req.json()
   } catch {
-    return errorResponse(400, 'Invalid JSON body.')
+    return errorResponse(400, 'Invalid JSON.', 'INVALID_JSON')
   }
 
   const { displayName, username, bio, avatarUrl } = body as {
@@ -159,9 +162,10 @@ async function handleUpdateMe(req: Request, authUserId: string): Promise<Respons
     .single()
 
   if (error) {
-    if (error.code === '23505') return errorResponse(409, 'This username is already taken.')
+    if (error.code === '23505') return errorResponse(409, 'This username is already taken.', 'DUPLICATE_USERNAME')
+    if (error.code === '23514') return errorResponse(400, 'Username must be at least 3 characters.', 'USERNAME_TOO_SHORT')
     console.error(error)
-    return errorResponse(500, 'Something went wrong. Please try again.')
+    return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
   }
 
   return jsonResponse(formatUser(data as DbUser))
@@ -172,7 +176,7 @@ async function handleUserSearch(
   authUserId: string,
 ): Promise<Response> {
   const query = url.searchParams.get('query')
-  if (!query) return errorResponse(400, 'query parameter is required.')
+  if (!query) return errorResponse(400, 'query parameter is required.', 'INVALID_REQUEST')
 
   const limit = Math.min(parseInt(url.searchParams.get('limit') ?? '20', 10), 100)
   const after = url.searchParams.get('after')
@@ -192,7 +196,7 @@ async function handleUserSearch(
   const { data, error } = await qb
   if (error) {
     console.error(error)
-    return errorResponse(500, 'Something went wrong. Please try again.')
+    return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
   }
 
   const rows = (data ?? []) as DbUser[]
@@ -207,7 +211,7 @@ async function handleUserSearch(
 
 async function handleGetUserById(targetId: string, authUserId: string): Promise<Response> {
   const user = await fetchUserWithFollowing(targetId, authUserId)
-  if (!user) return errorResponse(404, 'User not found.')
+  if (!user) return errorResponse(404, 'User not found.', 'USER_NOT_FOUND')
   return jsonResponse(formatUser(user, authUserId))
 }
 
@@ -236,7 +240,7 @@ async function handleGetFollowers(
   const { data: followRows, error } = await qb
   if (error) {
     console.error(error)
-    return errorResponse(500, 'Something went wrong. Please try again.')
+    return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
   }
 
   const page = (followRows ?? []).slice(0, limit)
@@ -290,7 +294,7 @@ async function handleGetFollowing(
   const { data: followRows, error } = await qb
   if (error) {
     console.error(error)
-    return errorResponse(500, 'Something went wrong. Please try again.')
+    return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
   }
 
   const page = (followRows ?? []).slice(0, limit)
@@ -319,17 +323,17 @@ async function handleGetFollowing(
 }
 
 async function handleFollow(targetId: string, authUserId: string): Promise<Response> {
-  if (targetId === authUserId) return errorResponse(400, 'You cannot follow yourself.')
+  if (targetId === authUserId) return errorResponse(400, 'You cannot follow yourself.', 'SELF_FOLLOW_NOT_ALLOWED')
 
   const { error } = await db
     .from('follows')
     .insert({ follower_id: authUserId, followee_id: targetId })
 
   if (error) {
-    if (error.code === '23505') return errorResponse(409, 'You are already following this user.')
-    if (error.code === '23514') return errorResponse(400, 'You cannot follow yourself.')
+    if (error.code === '23505') return errorResponse(409, 'You are already following this user.', 'DUPLICATE_FOLLOW')
+    if (error.code === '23514') return errorResponse(400, 'You cannot follow yourself.', 'SELF_FOLLOW_NOT_ALLOWED')
     console.error(error)
-    return errorResponse(500, 'Something went wrong. Please try again.')
+    return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
   }
 
   return new Response(null, { status: 204 })
@@ -449,45 +453,45 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (segment === 'me') {
     if (req.method === 'GET') return handleGetMe(authUserId)
     if (req.method === 'PUT') return handleUpdateMe(req, authUserId)
-    return errorResponse(405, 'Method not allowed.')
+    return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
   }
 
   // /users/search
   if (segment === 'search') {
     if (req.method === 'GET') return handleUserSearch(url, authUserId)
-    return errorResponse(405, 'Method not allowed.')
+    return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
   }
 
   // /users/{id} — segment must be a valid UUID
-  if (!segment || !isValidUUID(segment)) return errorResponse(404, 'Not found.')
+  if (!segment || !isValidUUID(segment)) return errorResponse(404, 'Not found.', 'NOT_FOUND')
   const targetUserId = segment
 
   if (subResource === undefined) {
     if (req.method === 'GET') return handleGetUserById(targetUserId, authUserId)
-    return errorResponse(405, 'Method not allowed.')
+    return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
   }
 
   if (subResource === 'followers') {
     if (req.method === 'GET') return handleGetFollowers(targetUserId, url, authUserId)
-    return errorResponse(405, 'Method not allowed.')
+    return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
   }
 
   if (subResource === 'following') {
     if (req.method === 'GET') return handleGetFollowing(targetUserId, url, authUserId)
     if (req.method === 'POST') return handleFollow(targetUserId, authUserId)
     if (req.method === 'DELETE') return handleUnfollow(targetUserId, authUserId)
-    return errorResponse(405, 'Method not allowed.')
+    return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
   }
 
   if (subResource === 'activity') {
     if (req.method === 'GET') return handleUserActivity(targetUserId, url)
-    return errorResponse(405, 'Method not allowed.')
+    return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
   }
 
   if (subResource === 'library') {
     if (req.method === 'GET') return handleUserLibrary(targetUserId, url)
-    return errorResponse(405, 'Method not allowed.')
+    return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
   }
 
-  return errorResponse(404, 'Not found.')
+  return errorResponse(404, 'Not found.', 'NOT_FOUND')
 })

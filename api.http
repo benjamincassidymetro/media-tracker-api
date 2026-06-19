@@ -10,13 +10,13 @@
 # Use {{login.response.body.accessToken}} instead of the static variable.
 
 @localUrl  = http://localhost:54321/functions/v1
-@remoteUrl = https://<project-ref>.supabase.co/functions/v1
+@remoteUrl = https://wjtzkgpxmxtzcczzbvrz.supabase.co/functions/v1
 
 # Switch between local and remote by changing this line:
-@baseUrl = {{localUrl}}
+@baseUrl = {{remoteUrl}}
 
-@clientId     = ics342-android-v1
-@clientSecret = mt-android-s26-xK9pQ2
+@clientId     = ics342-benjamin-cassidy
+@clientSecret = mt-UjzGysLe2ytPjMgzJe
 
 # Paste your access token here after logging in:
 @accessToken  = PASTE_ACCESS_TOKEN_HERE

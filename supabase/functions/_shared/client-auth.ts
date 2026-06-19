@@ -18,12 +18,12 @@ export async function validateClientCredentials(
 
   if (error || !data) {
     console.error(`[${tag}] client lookup failed`, { clientId, error: error?.message ?? 'no row' })
-    return { ok: false, response: errorResponse(401, 'Invalid client credentials.') }
+    return { ok: false, response: errorResponse(401, 'Invalid client credentials.', 'INVALID_CLIENT_CREDENTIALS') }
   }
 
   const match = clientSecret === (data.client_secret_hash as string)
   console.log(`[${tag}] compare`, { clientId, match })
 
-  if (!match) return { ok: false, response: errorResponse(401, 'Invalid client credentials.') }
+  if (!match) return { ok: false, response: errorResponse(401, 'Invalid client credentials.', 'INVALID_CLIENT_CREDENTIALS') }
   return { ok: true }
 }

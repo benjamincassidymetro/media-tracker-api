@@ -63,7 +63,7 @@ async function signInWithPassword(email: string, password: string) {
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return corsResponse()
-  if (req.method !== 'POST') return errorResponse(405, 'Method not allowed.')
+  if (req.method !== 'POST') return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
 
   console.log('[tokens] request:', req.method, new URL(req.url).pathname)
 
@@ -71,7 +71,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   try {
     body = await req.json()
   } catch {
-    return errorResponse(400, 'Invalid JSON body.')
+    return errorResponse(400, 'Invalid JSON.', 'INVALID_JSON')
   }
 
   const { grantType, clientId, clientSecret } = body as {
@@ -81,7 +81,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   if (!clientId || !clientSecret) {
-    return errorResponse(401, 'Client credentials required.')
+    return errorResponse(400, 'Missing required fields: clientId, clientSecret.', 'MISSING_FIELDS')
   }
   const clientAuth = await validateClientCredentials(clientId, clientSecret, 'tokens')
   if (!clientAuth.ok) return clientAuth.response
@@ -91,10 +91,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // -------------------------------------------------------------------------
   if (grantType === 'password') {
     const { email, password } = body as { email?: string; password?: string }
-    if (!email || !password) return errorResponse(400, 'email and password are required.')
+    if (!email || !password) return errorResponse(400, 'Missing required fields: email, password.', 'MISSING_FIELDS')
 
     const authData = await signInWithPassword(email, password)
-    if (!authData?.user) return errorResponse(401, 'Invalid email or password.')
+    if (!authData?.user) return errorResponse(401, 'Invalid email or password.', 'UNAUTHORIZED')
 
     const userId = authData.user.id
     const { data: profile, error: profileError } = await db
@@ -104,7 +104,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single()
     if (profileError || !profile) {
       console.error('[tokens] profile fetch failed:', profileError)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     const accessToken = await issueAccessToken(userId, authData.user.email)
@@ -118,7 +118,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // -------------------------------------------------------------------------
   if (grantType === 'refreshToken') {
     const { refreshToken: rawToken } = body as { refreshToken?: string }
-    if (!rawToken) return errorResponse(400, 'refreshToken is required.')
+    if (!rawToken) return errorResponse(400, 'Missing required field: refreshToken.', 'MISSING_FIELDS')
 
     const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawToken))
     const tokenHash = Array.from(new Uint8Array(hashBuffer))
@@ -133,7 +133,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .gt('expires_at', new Date().toISOString())
       .single()
 
-    if (tokenError || !tokenRow) return errorResponse(401, 'Invalid or expired refresh token.')
+    if (tokenError || !tokenRow) return errorResponse(401, 'Invalid or expired refresh token.', 'TOKEN_INVALID')
 
     await db
       .from('refresh_tokens')
@@ -148,7 +148,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .single()
     if (profileError || !profile) {
       console.error('[tokens] profile fetch failed:', profileError)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     const accessToken = await issueAccessToken(userId, (profile as DbUser).email)
@@ -161,5 +161,5 @@ Deno.serve(async (req: Request): Promise<Response> => {
     })
   }
 
-  return errorResponse(400, 'Invalid grantType. Must be "password" or "refreshToken".')
+  return errorResponse(400, 'Invalid grantType. Must be "password" or "refreshToken".', 'INVALID_REQUEST')
 })

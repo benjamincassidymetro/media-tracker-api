@@ -70,7 +70,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       const { data, error } = await qb
       if (error) {
         console.error(error)
-        return errorResponse(500, 'Something went wrong. Please try again.')
+        return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
       }
 
       const rows = (data ?? []) as DbLibraryItem[]
@@ -90,11 +90,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
       try {
         body = await req.json()
       } catch {
-        return errorResponse(400, 'Invalid JSON body.')
+        return errorResponse(400, 'Invalid JSON.', 'INVALID_JSON')
       }
 
       const { mediaId, status } = body as { mediaId?: number; status?: LibraryStatus }
-      if (!mediaId || !status) return errorResponse(400, 'mediaId and status are required.')
+      if (!mediaId || !status) return errorResponse(400, 'Missing required fields: mediaId, status.', 'MISSING_FIELDS')
 
       const { data, error } = await db
         .from('library_items')
@@ -104,10 +104,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       if (error) {
         if (error.code === '23505') {
-          return errorResponse(409, 'This item is already in your library.')
+          return errorResponse(409, 'This item is already in your library.', 'DUPLICATE_LIBRARY_ITEM')
         }
         console.error(error)
-        return errorResponse(500, 'Something went wrong. Please try again.')
+        return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
       }
 
       await createActivityRecord(authUserId, mediaId, status)
@@ -115,12 +115,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return jsonResponse(formatLibraryItem(data as DbLibraryItem), 201)
     }
 
-    return errorResponse(405, 'Method not allowed.')
+    return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
   }
 
   // /library/{mediaId}
   const mediaId = parseInt(segment, 10)
-  if (isNaN(mediaId)) return errorResponse(404, 'Not found.')
+  if (isNaN(mediaId)) return errorResponse(404, 'Not found.', 'NOT_FOUND')
 
   // GET /library/{mediaId}
   if (req.method === 'GET') {
@@ -131,7 +131,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq('media_id', mediaId)
       .single()
 
-    if (error || !data) return errorResponse(404, 'This media item is not in your library.')
+    if (error || !data) return errorResponse(404, 'This media item is not in your library.', 'NOT_FOUND')
     return jsonResponse(formatLibraryItem(data as DbLibraryItem))
   }
 
@@ -141,11 +141,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     try {
       body = await req.json()
     } catch {
-      return errorResponse(400, 'Invalid JSON body.')
+      return errorResponse(400, 'Invalid JSON.', 'INVALID_JSON')
     }
 
     const { status } = body as { status?: LibraryStatus }
-    if (!status) return errorResponse(400, 'status is required.')
+    if (!status) return errorResponse(400, 'Missing required field: status.', 'MISSING_FIELDS')
 
     // Fetch current status to detect change (needed for activity record)
     const { data: current, error: fetchError } = await db
@@ -155,7 +155,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq('media_id', mediaId)
       .single()
 
-    if (fetchError || !current) return errorResponse(404, 'This media item is not in your library.')
+    if (fetchError || !current) return errorResponse(404, 'This media item is not in your library.', 'NOT_FOUND')
 
     const { data, error } = await db
       .from('library_items')
@@ -167,7 +167,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (error) {
       console.error(error)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     // Create activity only when status actually changes (not when setting want_to)
@@ -189,11 +189,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (error) {
       console.error(error)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     return new Response(null, { status: 204 })
   }
 
-  return errorResponse(405, 'Method not allowed.')
+  return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
 })

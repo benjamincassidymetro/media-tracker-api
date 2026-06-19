@@ -6,7 +6,7 @@ import { formatActivity, type DbActivity } from '../_shared/types.ts'
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') return corsResponse()
-  if (req.method !== 'GET') return errorResponse(405, 'Method not allowed.')
+  if (req.method !== 'GET') return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
 
   let authUserId: string
   try {
@@ -27,7 +27,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (followError) {
     console.error(followError)
-    return errorResponse(500, 'Something went wrong. Please try again.')
+    return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
   }
 
   const followeeIds = (followRows ?? []).map((r) => r.followee_id as string)
@@ -54,7 +54,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const { data, error } = await qb
   if (error) {
     console.error(error)
-    return errorResponse(500, 'Something went wrong. Please try again.')
+    return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
   }
 
   const rows = (data ?? []) as DbActivity[]
