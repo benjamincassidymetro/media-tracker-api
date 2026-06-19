@@ -64,7 +64,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       const { data, error } = await qb
       if (error) {
         console.error(error)
-        return errorResponse(500, 'Something went wrong. Please try again.')
+        return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
       }
 
       const rows = (data ?? []) as DbReview[]
@@ -84,7 +84,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       try {
         body = await req.json()
       } catch {
-        return errorResponse(400, 'Invalid JSON body.')
+        return errorResponse(400, 'Invalid JSON.', 'INVALID_JSON')
       }
 
       const { mediaId, rating, reviewText, shareToFeed = true } = body as {
@@ -94,8 +94,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         shareToFeed?: boolean
       }
 
-      if (!mediaId || !rating) return errorResponse(400, 'mediaId and rating are required.')
-      if (rating < 1 || rating > 5) return errorResponse(400, 'rating must be between 1 and 5.')
+      if (!mediaId || !rating) return errorResponse(400, 'Missing required fields: mediaId, rating.', 'MISSING_FIELDS')
+      if (rating < 1 || rating > 5) return errorResponse(400, 'rating must be between 1 and 5.', 'INVALID_REQUEST')
 
       const { data, error } = await db
         .from('reviews')
@@ -111,10 +111,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       if (error) {
         if (error.code === '23505') {
-          return errorResponse(409, 'You have already reviewed this media item.')
+          return errorResponse(409, 'You have already reviewed this media item.', 'DUPLICATE_REVIEW')
         }
         console.error(error)
-        return errorResponse(500, 'Something went wrong. Please try again.')
+        return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
       }
 
       if (shareToFeed) {
@@ -124,12 +124,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return jsonResponse(formatReview(data as DbReview), 201)
     }
 
-    return errorResponse(405, 'Method not allowed.')
+    return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
   }
 
   // /reviews/{id}
   const reviewId = parseInt(segment, 10)
-  if (isNaN(reviewId)) return errorResponse(404, 'Not found.')
+  if (isNaN(reviewId)) return errorResponse(404, 'Not found.', 'NOT_FOUND')
 
   // PUT /reviews/{id}
   if (req.method === 'PUT') {
@@ -139,21 +139,21 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq('id', reviewId)
       .single()
 
-    if (fetchError || !existing) return errorResponse(404, 'Review not found.')
+    if (fetchError || !existing) return errorResponse(404, 'Review not found.', 'REVIEW_NOT_FOUND')
     if ((existing.user_id as string) !== authUserId) {
-      return errorResponse(403, 'You can only edit your own reviews.')
+      return errorResponse(403, 'You can only edit your own reviews.', 'FORBIDDEN')
     }
 
     let body: Record<string, unknown>
     try {
       body = await req.json()
     } catch {
-      return errorResponse(400, 'Invalid JSON body.')
+      return errorResponse(400, 'Invalid JSON.', 'INVALID_JSON')
     }
 
     const { rating, reviewText } = body as { rating?: number; reviewText?: string }
     if (rating !== undefined && (rating < 1 || rating > 5)) {
-      return errorResponse(400, 'rating must be between 1 and 5.')
+      return errorResponse(400, 'rating must be between 1 and 5.', 'INVALID_REQUEST')
     }
 
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
@@ -169,7 +169,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (error) {
       console.error(error)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     return jsonResponse(formatReview(data as DbReview))
@@ -183,19 +183,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .eq('id', reviewId)
       .single()
 
-    if (fetchError || !existing) return errorResponse(404, 'Review not found.')
+    if (fetchError || !existing) return errorResponse(404, 'Review not found.', 'REVIEW_NOT_FOUND')
     if ((existing.user_id as string) !== authUserId) {
-      return errorResponse(403, 'You can only delete your own reviews.')
+      return errorResponse(403, 'You can only delete your own reviews.', 'FORBIDDEN')
     }
 
     const { error } = await db.from('reviews').delete().eq('id', reviewId)
     if (error) {
       console.error(error)
-      return errorResponse(500, 'Something went wrong. Please try again.')
+      return errorResponse(500, 'Something went wrong. Please try again.', 'DATABASE_ERROR')
     }
 
     return new Response(null, { status: 204 })
   }
 
-  return errorResponse(405, 'Method not allowed.')
+  return errorResponse(405, 'Method not allowed.', 'METHOD_NOT_ALLOWED')
 })

@@ -148,16 +148,52 @@ Three-segment path for likes: `['quotes', '{id}', 'likes']` → `POST|DELETE /qu
 
 ## Error Response Format
 
-All errors use `{ "message": "Human-readable description." }`. Never expose raw database errors or stack traces.
+All errors use a standardized format:
 
-Common status codes:
-- `400` — bad input, business rule violation (e.g., self-follow, max priorities)
-- `401` — missing/invalid/expired token, bad client credentials
-- `403` — authenticated but not authorized (e.g., editing another user's review)
-- `404` — resource not found (always `{ "message": "Not found." }`)
+```json
+{
+  "code": "ERROR_CODE",
+  "message": "Human-readable description for display or logging."
+}
+```
+
+**Error codes** allow clients to handle different errors programmatically. Never expose raw database errors or stack traces.
+
+**Common error codes:**
+- `INVALID_JSON` — malformed request body
+- `MISSING_FIELDS` — required field missing from request
+- `INVALID_CLIENT_CREDENTIALS` — bad clientId/clientSecret
+- `UNAUTHORIZED` — missing/invalid auth header or credentials
+- `TOKEN_EXPIRED` — JWT has expired
+- `TOKEN_INVALID` — JWT is malformed or signing failed
+- `FORBIDDEN` — authenticated but not authorized (e.g., editing another user's review)
+- `INVALID_REQUEST` — invalid query parameter or constraint violation (e.g., rating not 1-5)
+- `NOT_FOUND` — resource doesn't exist (generic)
+- `USER_NOT_FOUND` — user not found
+- `MEDIA_NOT_FOUND` — media item not found
+- `REVIEW_NOT_FOUND` — review not found
+- `QUOTE_NOT_FOUND` — quote not found
+- `DUPLICATE_EMAIL` — email already registered
+- `DUPLICATE_USERNAME` — username already taken
+- `DUPLICATE_LIBRARY_ITEM` — item already in user's library
+- `DUPLICATE_REVIEW` — user already reviewed this media
+- `DUPLICATE_GOAL` — goal for this year/type already exists
+- `DUPLICATE_FOLLOW` — already following this user
+- `DUPLICATE_QUOTE_LIKE` — already liked this quote
+- `USERNAME_TOO_SHORT` — username must be at least 3 characters
+- `SELF_FOLLOW_NOT_ALLOWED` — cannot follow yourself
+- `MAX_PRIORITIES_EXCEEDED` — max 5 priority items
+- `METHOD_NOT_ALLOWED` — HTTP method not supported for this endpoint
+- `DATABASE_ERROR` — unexpected database error
+
+**HTTP status codes:**
+- `400` — bad input, validation error, business rule violation
+- `401` — missing/invalid/expired auth, bad client credentials
+- `403` — authenticated but not authorized
+- `404` — resource not found
 - `405` — method not allowed
-- `409` — conflict (duplicate library item, duplicate review, already following, duplicate goal)
-- `500` — `{ "message": "Something went wrong. Please try again." }`
+- `409` — conflict (duplicate, already exists)
+- `500` — server error (code is always `DATABASE_ERROR`)
 
 ---
 
