@@ -150,6 +150,7 @@ type TmdbShowDetail = {
 }
 
 type GoogleBooksResponse = {
+  totalItems?: number
   items?: Array<{
     id: string
     volumeInfo: {
@@ -204,9 +205,11 @@ function parseYear(dateStr: string | null | undefined): number | null {
 
 async function fetchMovies(page: number): Promise<{ records: MediaInsert[]; errors: string[] }> {
   const errors: string[] = []
+  console.log(`[movies] fetching popular page ${page}`)
   const list = await fetchJson<TmdbListResponse>(
     `${TMDB_BASE}/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`,
   )
+  console.log(`[movies] list returned ${list.results.length} items — fetching details`)
 
   const detailResults = await Promise.allSettled(
     list.results.map((item) =>
@@ -243,6 +246,7 @@ async function fetchMovies(page: number): Promise<{ records: MediaInsert[]; erro
       episode_count: null,
     })
   }
+  console.log(`[movies] built ${records.length} records (${errors.length} detail errors)`)
   return { records, errors }
 }
 
@@ -253,9 +257,11 @@ async function fetchMovies(page: number): Promise<{ records: MediaInsert[]; erro
 
 async function fetchShows(page: number): Promise<{ records: MediaInsert[]; errors: string[] }> {
   const errors: string[] = []
+  console.log(`[shows] fetching popular page ${page}`)
   const list = await fetchJson<TmdbListResponse>(
     `${TMDB_BASE}/tv/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`,
   )
+  console.log(`[shows] list returned ${list.results.length} items — fetching details`)
 
   const detailResults = await Promise.allSettled(
     list.results.map((item) =>
@@ -289,6 +295,7 @@ async function fetchShows(page: number): Promise<{ records: MediaInsert[]; error
       episode_count: d.number_of_episodes ?? null,
     })
   }
+  console.log(`[shows] built ${records.length} records (${errors.length} detail errors)`)
   return { records, errors }
 }
 
@@ -302,11 +309,16 @@ async function fetchBooks(
   startIndex: number,
 ): Promise<{ records: MediaInsert[]; errors: string[] }> {
   const subject = BOOK_SUBJECTS[subjectIndex]
-  const data = await fetchJson<GoogleBooksResponse>(
-    `${BOOKS_BASE}/volumes?q=subject:${encodeURIComponent(subject.query)}&orderBy=relevance&maxResults=40&startIndex=${startIndex}&langRestrict=en&key=${GOOGLE_BOOKS_API_KEY}`,
-  )
+  const url = `${BOOKS_BASE}/volumes?q=subject:${encodeURIComponent(subject.query)}&orderBy=relevance&maxResults=40&startIndex=${startIndex}&langRestrict=en&key=${GOOGLE_BOOKS_API_KEY}`
+  console.log(`[books] subject=${subject.query} startIndex=${startIndex}`)
+  console.log(`[books] url=${url.replace(GOOGLE_BOOKS_API_KEY ?? '', '<key>')}`)
+  const data = await fetchJson<GoogleBooksResponse>(url)
+  console.log(`[books] api returned ${data.items?.length ?? 0} items (totalItems=${data.totalItems ?? 'unknown'})`)
 
-  if (!data.items?.length) return { records: [], errors: [] }
+  if (!data.items?.length) {
+    console.log(`[books] no items returned — subject may have no results at startIndex=${startIndex}`)
+    return { records: [], errors: [] }
+  }
 
   const records: MediaInsert[] = data.items.map((item) => {
     const info = item.volumeInfo
@@ -341,6 +353,7 @@ async function fetchBooks(
     }
   })
 
+  console.log(`[books] built ${records.length} records`)
   return { records, errors: [] }
 }
 
@@ -349,6 +362,8 @@ async function fetchBooks(
 // ---------------------------------------------------------------------------
 
 Deno.serve(async (req: Request): Promise<Response> => {
+  const startTime = Date.now()
+
   // pg_cron scheduled invocations use POST
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ code: 'METHOD_NOT_ALLOWED', message: 'Use POST.' }), {
@@ -371,19 +386,53 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   if (!TMDB_API_KEY || !GOOGLE_BOOKS_API_KEY) {
+    const missing = [!TMDB_API_KEY && 'TMDB_API_KEY', !GOOGLE_BOOKS_API_KEY && 'GOOGLE_BOOKS_API_KEY'].filter(Boolean)
+    console.error(`[seeder] missing env vars: ${missing.join(', ')}`)
     return new Response(
-      JSON.stringify({ code: 'CONFIGURATION_ERROR', message: 'Missing TMDB_API_KEY or GOOGLE_BOOKS_API_KEY.' }),
+      JSON.stringify({ code: 'CONFIGURATION_ERROR', message: `Missing: ${missing.join(', ')}` }),
       { status: 500, headers: { 'Content-Type': 'application/json' } },
     )
   }
 
-  // Derive a monotonically increasing run number from the current 30-minute window.
-  // Stateless — no DB tracking needed. Drives page and subject rotation.
-  const runNumber = Math.floor(Date.now() / (30 * 60 * 1000))
-  const moviePage = (runNumber % 250) + 1       // cycles pages 1–250 → ~5,000 unique movies
-  const showPage = (runNumber % 150) + 1        // cycles pages 1–150 → ~3,000 unique shows
-  const subjectIndex = runNumber % BOOK_SUBJECTS.length
-  const bookStartIndex = (Math.floor(runNumber / BOOK_SUBJECTS.length) % 25) * 40 // 25 pages × 40 → 1,000/subject
+  // ---------------------------------------------------------------------------
+  // Determine cursor position from last run in seeder_runs.
+  // Falls back to sensible defaults if no runs exist yet.
+  // ---------------------------------------------------------------------------
+  const { data: lastRun } = await db
+    .from('seeder_runs')
+    .select('movie_page, show_page, book_subject, book_start_index')
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  // TMDB pages cycle: movies 1–250, shows 1–150
+  const moviePage = lastRun ? (lastRun.movie_page % 250) + 1 : 1
+  const showPage = lastRun ? (lastRun.show_page % 150) + 1 : 1
+
+  // Books: advance within a subject (40 per page, 25 pages = 1,000 per subject),
+  // then move to the next subject. Cycles through all 20 subjects.
+  let subjectIndex: number
+  let bookStartIndex: number
+  if (!lastRun) {
+    subjectIndex = 0
+    bookStartIndex = 0
+  } else {
+    const lastSubjectIndex = BOOK_SUBJECTS.findIndex((s) => s.query === lastRun.book_subject)
+    const safeLastSubject = lastSubjectIndex >= 0 ? lastSubjectIndex : 0
+    if (lastRun.book_start_index + 40 < 1000) {
+      subjectIndex = safeLastSubject
+      bookStartIndex = lastRun.book_start_index + 40
+    } else {
+      subjectIndex = (safeLastSubject + 1) % BOOK_SUBJECTS.length
+      bookStartIndex = 0
+    }
+  }
+
+  console.log(
+    `[seeder] moviePage=${moviePage} showPage=${showPage}` +
+    ` bookSubject=${BOOK_SUBJECTS[subjectIndex].query} bookStartIndex=${bookStartIndex}` +
+    ` (lastRun=${lastRun ? 'found' : 'none'})`,
+  )
 
   const [moviesResult, showsResult, booksResult] = await Promise.allSettled([
     fetchMovies(moviePage),
@@ -415,21 +464,52 @@ Deno.serve(async (req: Request): Promise<Response> => {
     errors.push(`books: ${booksResult.reason}`)
   }
 
-  let upsertError: string | null = null
-  if (allRecords.length > 0) {
-    const { error } = await db.from('media').upsert(allRecords, { onConflict: 'external_id' })
-    if (error) upsertError = error.message
-  }
-
   const movieCount = moviesResult.status === 'fulfilled' ? moviesResult.value.records.length : 0
   const showCount = showsResult.status === 'fulfilled' ? showsResult.value.records.length : 0
   const bookCount = booksResult.status === 'fulfilled' ? booksResult.value.records.length : 0
+
+  console.log(`[seeder] fetched movies=${movieCount} shows=${showCount} books=${bookCount}`)
+  if (errors.length > 0) console.warn(`[seeder] fetch errors:`, errors)
+
+  let upsertError: string | null = null
+  if (allRecords.length > 0) {
+    console.log(`[seeder] upserting ${allRecords.length} records...`)
+    const { error } = await db.from('media').upsert(allRecords, { onConflict: 'external_id' })
+    if (error) {
+      console.error(`[seeder] upsert failed:`, error)
+      upsertError = error.message
+    } else {
+      console.log(`[seeder] upsert succeeded`)
+    }
+  } else {
+    console.warn(`[seeder] no records to upsert — all fetches may have failed`)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Record this run. Written even on partial failure so the cursor advances.
+  // ---------------------------------------------------------------------------
+  const runStatus = upsertError ? 'failed' : errors.length > 0 ? 'partial' : 'success'
+  const durationMs = Date.now() - startTime
+  const { error: logError } = await db.from('seeder_runs').insert({
+    movie_page: moviePage,
+    show_page: showPage,
+    book_subject: BOOK_SUBJECTS[subjectIndex].query,
+    book_start_index: bookStartIndex,
+    movies_upserted: movieCount,
+    shows_upserted: showCount,
+    books_upserted: bookCount,
+    errors,
+    status: runStatus,
+    duration_ms: durationMs,
+  })
+  if (logError) console.error(`[seeder] failed to log run:`, logError)
+
+  console.log(`[seeder] done status=${runStatus} duration=${durationMs}ms`)
 
   const isError = !!upsertError || (errors.length > 0 && allRecords.length === 0)
 
   return new Response(
     JSON.stringify({
-      run: runNumber,
       pages: { movies: moviePage, shows: showPage },
       book_subject: {
         index: subjectIndex,
@@ -442,6 +522,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         books: bookCount,
         total: movieCount + showCount + bookCount,
       },
+      status: runStatus,
+      duration_ms: durationMs,
       upsert_error: upsertError,
       errors,
     }),
