@@ -89,5 +89,12 @@ verify_jwt = false
 [functions.docs]
 verify_jwt = false
 
+# Scheduled seeder — fetches movies/shows from TMDB and books from Google Books every 30 min.
+# Requires TMDB_API_KEY, GOOGLE_BOOKS_API_KEY, and SEEDER_SECRET to be set as Supabase secrets.
+# Run once after deploying: supabase secrets set TMDB_API_KEY=... GOOGLE_BOOKS_API_KEY=... SEEDER_SECRET=...
+[functions.media-seeder]
+verify_jwt = false
+schedule = "*/30 * * * *"
+
 [analytics]
 enabled = false
